@@ -597,7 +597,9 @@ export default function SwapInterface() {
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="font-bold">{token.symbol}</span>
-                  <span className="text-xs text-muted-foreground">{token.name}</span>
+                  <span className="text-xs text-muted-foreground font-mono">
+                    {token.address.slice(0, 6)}...{token.address.slice(-4)}
+                  </span>
                 </div>
               </Button>
             </DialogClose>

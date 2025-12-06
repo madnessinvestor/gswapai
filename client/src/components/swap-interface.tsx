@@ -19,7 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 const ARC_CHAIN_ID_HEX = '0x4ceec2'; // 5042002
 const ARC_RPC_URL = 'https://rpc.testnet.arc.network';
 
-const POOL_ADDRESS = "0x18eAE2e870Ec4Bc31a41B12773c4F5c40Bf19aCD";
+const FACTORY_ADDRESS = "0x34A0b64a88BBd4Bf6Acba8a0Ff8F27c8aDD67E9C";
+const ROUTER_ADDRESS = "0x284C5Afc100ad14a458255075324fA0A9dfd66b1";
 
 // Token Definitions
 const TOKENS = [
@@ -27,7 +28,7 @@ const TOKENS = [
     symbol: "USDC", 
     name: "USD Coin", 
     icon: "$", 
-    address: "0x3600000000000000000000000000000000000000", // Native on Arc but also has this address
+    address: "0x3600000000000000000000000000000000000000", 
     decimals: 6 
   },
   { 
@@ -45,7 +46,7 @@ const ARC_TESTNET_PARAMS = {
   nativeCurrency: {
     name: 'USDC',
     symbol: 'USDC',
-    decimals: 6,
+    decimals: 18, // Metamask often requires 18 for native currency even if it's USDC
   },
   rpcUrls: [ARC_RPC_URL],
   blockExplorerUrls: ['https://testnet.arcscan.app'],
@@ -158,12 +159,21 @@ export default function SwapInterface() {
             }
           } else {
               console.error(switchError);
-              toast({
-                title: "Network Error",
-                description: "Failed to switch to Arc Testnet.",
-                variant: "destructive",
-              });
-              return;
+              // Try adding the chain if switch fails with a different error (sometimes code is different)
+              try {
+                await ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [ARC_TESTNET_PARAMS],
+                });
+              } catch (addError: any) {
+                  console.error(addError);
+                  toast({
+                    title: "Network Error",
+                    description: `Failed to switch to Arc Testnet. Error: ${switchError.message || switchError.code}`,
+                    variant: "destructive",
+                  });
+                  return;
+              }
           }
         }
         

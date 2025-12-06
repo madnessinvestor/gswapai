@@ -16,7 +16,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import { useToast } from "@/hooks/use-toast";
 
 // Configuration for Arc Testnet
-const ARC_CHAIN_ID_HEX = '0x4ceec2'; // 5042002
+const ARC_CHAIN_ID_HEX = '0x4cef52'; // 5042002
 const ARC_RPC_URL = 'https://rpc.testnet.arc.network';
 
 const FACTORY_ADDRESS = "0x34A0b64a88BBd4Bf6Acba8a0Ff8F27c8aDD67E9C";

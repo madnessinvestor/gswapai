@@ -18,22 +18,22 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 const ARC_CHAIN_ID_HEX = '0x4ceec2'; // 5042002
 const ARC_RPC_URL = 'https://rpc.testnet.arc.network';
 
+const POOL_ADDRESS = "0x18eAE2e870Ec4Bc31a41B12773c4F5c40Bf19aCD";
+
 // Token Definitions
 const TOKENS = [
   { 
     symbol: "USDC", 
     name: "USD Coin", 
     icon: "$", 
-    address: "native", // USDC is native on Arc
+    address: "0x3600000000000000000000000000000000000000", // Native on Arc but also has this address
     decimals: 6 
   },
   { 
     symbol: "EURC", 
     name: "Euro Coin", 
     icon: "€", 
-    // Placeholder address for EURC - User needs to provide the real one if not listed
-    // Using a zero address for now or we could use one of the test tokens if known
-    address: "0x0000000000000000000000000000000000000000", 
+    address: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", 
     decimals: 6 
   },
 ];
@@ -86,6 +86,7 @@ export default function SwapInterface() {
     
     try {
       // 1. Fetch USDC (Native) Balance
+      // Note: On Arc, USDC is the native gas token, so we use eth_getBalance
       const nativeBalanceHex = await ethereum.request({
         method: 'eth_getBalance',
         params: [userAddress, 'latest'],
@@ -94,25 +95,21 @@ export default function SwapInterface() {
 
       // 2. Fetch EURC Balance (ERC20)
       // Function signature for balanceOf(address) is 0x70a08231
-      // Pad address to 32 bytes (64 hex chars)
       const paddedAddress = userAddress.replace('0x', '').padStart(64, '0');
       const data = '0x70a08231' + paddedAddress;
       
       let eurcBal = "0.00";
-      // Only call if we have a valid contract address
-      if (TOKENS[1].address !== "0x0000000000000000000000000000000000000000") {
-          try {
-            const tokenBalanceHex = await ethereum.request({
-                method: 'eth_call',
-                params: [{
-                    to: TOKENS[1].address,
-                    data: data
-                }, 'latest']
-            });
-            eurcBal = formatBalance(tokenBalanceHex, 6);
-          } catch (e) {
-              console.warn("Failed to fetch ERC20 balance", e);
-          }
+      try {
+        const tokenBalanceHex = await ethereum.request({
+            method: 'eth_call',
+            params: [{
+                to: TOKENS[1].address,
+                data: data
+            }, 'latest']
+        });
+        eurcBal = formatBalance(tokenBalanceHex, 6);
+      } catch (e) {
+          console.warn("Failed to fetch ERC20 balance", e);
       }
 
       setBalances({

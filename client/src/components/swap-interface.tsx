@@ -531,10 +531,10 @@ export default function SwapInterface() {
             fullHash: fullHash
         };
         
-        // Keep only last 100 global trades
+        // Keep only last 40 global trades
         setTrades(prev => {
             const newTrades = [randomTrade, ...prev];
-            return newTrades.slice(0, 100);
+            return newTrades.slice(0, 40);
         });
       }
     }, 5000);
@@ -640,8 +640,8 @@ export default function SwapInterface() {
                 fullHash: hash
               };
               
-              // Add to global trades (limited to 100)
-              setTrades(prev => [newTrade, ...prev].slice(0, 100));
+              // Add to global trades (limited to 40)
+              setTrades(prev => [newTrade, ...prev].slice(0, 40));
               
               // Add to my trades (unlimited for session, filtered by account view)
               setMyTrades(prev => {

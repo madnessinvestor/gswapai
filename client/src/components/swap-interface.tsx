@@ -239,6 +239,12 @@ export default function SwapInterface() {
   const [needsApproval, setNeedsApproval] = useState(false);
   const [trades, setTrades] = useState(INITIAL_TRADES);
   const [chartTimeframe, setChartTimeframe] = useState("1D");
+  const [showMyTrades, setShowMyTrades] = useState(false);
+
+  // Filter trades based on selection
+  const displayedTrades = showMyTrades && account
+    ? trades.filter(t => (t as any).fullTrader?.toLowerCase() === account.toLowerCase() || t.trader.toLowerCase() === account.toLowerCase())
+    : trades;
   
   // Calculate current exchange rate
   const currentRate = fromToken.symbol === "EURC" && toToken.symbol === "USDC" ? 7.56 : 
@@ -929,13 +935,47 @@ export default function SwapInterface() {
             {/* Trade History (Full Width Below) */}
             <Card className="w-full bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden col-span-1 lg:col-span-12">
                 <div className="p-5 border-b border-border/50 bg-card/30 flex items-center justify-between">
-                   <h3 className="font-bold text-base text-foreground">Trade History & Traders</h3>
-                   <span className="text-xs text-muted-foreground">Showing some recent trades</span>
+                   <div className="flex flex-col gap-1">
+                     <h3 className="font-bold text-base text-foreground">Trade History & Trades</h3>
+                     <span className="text-xs text-muted-foreground">
+                       {showMyTrades ? "Showing your recent trades" : "Showing all recent trades"}
+                     </span>
+                   </div>
+                   
+                   <div className="flex bg-secondary/30 rounded-lg p-1 gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowMyTrades(false)}
+                        className={`h-7 px-3 text-xs rounded-md transition-all ${!showMyTrades ? 'bg-background shadow-sm text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                      >
+                        All Trades
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowMyTrades(true)}
+                        disabled={!account}
+                        className={`h-7 px-3 text-xs rounded-md transition-all ${showMyTrades ? 'bg-background shadow-sm text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                      >
+                        My Trades
+                      </Button>
+                   </div>
                 </div>
                 <div className="overflow-x-auto">
-                    {trades.length === 0 ? (
-                      <div className="p-8 text-center text-muted-foreground text-sm">
-                        No recent trades
+                    {displayedTrades.length === 0 ? (
+                      <div className="p-12 flex flex-col items-center justify-center text-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-secondary/30 flex items-center justify-center text-muted-foreground">
+                          <Activity className="w-6 h-6 opacity-50" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-foreground font-medium">No trades found</span>
+                          <span className="text-muted-foreground text-sm">
+                            {showMyTrades && !account 
+                              ? "Connect your wallet to see your trades" 
+                              : "No recent trades to display"}
+                          </span>
+                        </div>
                       </div>
                     ) : (
                     <table className="w-full text-sm text-left border-collapse">
@@ -950,7 +990,7 @@ export default function SwapInterface() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border/30">
-                        {trades.map((trade, i) => (
+                        {displayedTrades.map((trade, i) => (
                         <tr key={i} className="hover:bg-secondary/20 transition-colors group">
                             <td className="px-6 py-4 font-semibold text-foreground">
                                 <div className="flex items-center gap-2">

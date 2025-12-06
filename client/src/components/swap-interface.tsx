@@ -14,7 +14,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useToast } from "@/hooks/use-toast";
-import { createWalletClient, custom, parseUnits, encodeFunctionData, formatUnits } from 'viem';
+import { createWalletClient, custom, parseUnits, encodeFunctionData, formatUnits, encodeAbiParameters } from 'viem';
 // import { arc } from 'viem/chains'; // Removed as we define custom chain
 
 // Define Arc Testnet Custom Chain for Viem
@@ -239,7 +239,7 @@ export default function SwapInterface() {
         const encodedAllowance = encodeFunctionData({
             abi: ERC20_ABI,
             functionName: 'allowance',
-            args: [account, ROUTER_ADDRESS]
+            args: [account, POOL_ADDRESS]
         });
 
         const allowanceResult = await (client as any).request({
@@ -325,7 +325,7 @@ export default function SwapInterface() {
           const data = encodeFunctionData({
               abi: ERC20_ABI,
               functionName: 'approve',
-              args: [ROUTER_ADDRESS, amountToApprove]
+              args: [POOL_ADDRESS, amountToApprove]
           });
           
           const hash = await client.sendTransaction({
@@ -359,30 +359,34 @@ export default function SwapInterface() {
           const amountIn = parseUnits(inputAmount, fromToken.decimals);
           const amountOutMinVal = parseFloat(outputAmount) * (1 - parseFloat(slippage)/100);
           const amountOutMin = parseUnits(amountOutMinVal.toFixed(toToken.decimals), toToken.decimals);
-          const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 mins
           
-          const fromAddr = fromToken.isNative ? "0x3600000000000000000000000000000000000000" : fromToken.address;
-          const toAddr = toToken.isNative ? "0x3600000000000000000000000000000000000000" : toToken.address;
-          
-          const path = [fromAddr, toAddr];
+          // Use POOL_ADDRESS for the swap, not Router
+          const targetAddress = POOL_ADDRESS;
 
-          let data;
-          let value = BigInt(0);
-
-          // Always use swapExactTokensForTokens (Treating USDC as ERC20)
-          data = encodeFunctionData({
-              abi: ROUTER_ABI,
-              functionName: 'swapExactTokensForTokens',
-              args: [amountIn, amountOutMin, path, account, deadline]
-          });
+          // Function signature 0x84b065d3 matches the successful transaction
+          // We construct the calldata manually to match exactly what works
+          // Structure: Selector(4 bytes) + AmountIn(32 bytes) + AmountOutMin(32 bytes) + Recipient(32 bytes)
           
-          // Value is 0 because we are approving and transferring tokens (even for USDC)
+          const selector = "0x84b065d3";
+          const encodedParams = encodeAbiParameters(
+            [
+              { type: 'uint256' },
+              { type: 'uint256' },
+              { type: 'address' }
+            ],
+            [amountIn, amountOutMin, account as `0x${string}`]
+          );
+          
+          data = selector + encodedParams.slice(2); // Remove 0x from params to concatenate
+
+          console.log("Sending Transaction to Pool:", targetAddress);
+          console.log("Data:", data);
 
           const hash = await client.sendTransaction({
               account: account as `0x${string}`,
-              to: ROUTER_ADDRESS,
-              data: data,
-              value: value
+              to: targetAddress,
+              data: data as `0x${string}`,
+              value: BigInt(0)
           });
 
           toast({ title: "Swap Submitted", description: "Transaction sent to network." });

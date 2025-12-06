@@ -895,100 +895,98 @@ export default function SwapInterface() {
             </div>
         </div>
 
-        {/* Trade History (Full Width Below) */}
-        <Card className="w-full bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden">
-            <div className="p-5 border-b border-border/50 bg-card/30 flex items-center justify-between">
-               <h3 className="font-bold text-sm flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> Trade History & Traders</h3>
-            </div>
-            <div className="overflow-x-auto">
-                {trades.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground text-sm">
-                    No recent trades
-                  </div>
-                ) : (
-                <table className="w-full text-sm text-left border-collapse">
-                <thead className="text-xs text-muted-foreground border-b border-border/50">
-                    <tr>
-                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">Trader</th>
-                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">Token Amount</th>
-                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">USDC Amount</th>
-                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">Time</th>
-                    <th className="px-6 py-4 font-semibold uppercase tracking-wider text-right">Tx</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-border/30">
-                    {trades.map((trade, i) => (
-                    <tr key={i} className="hover:bg-secondary/20 transition-colors group">
-                        <td className="px-6 py-4 font-medium text-foreground group-hover:text-primary transition-colors">
-                            <div className="flex items-center gap-2">
-                              {trade.trader.includes('Router') ? 'Router' : trade.trader}
-                              <ExternalLink className="w-3 h-3 text-orange-500 opacity-70 hover:opacity-100 cursor-pointer" />
-                            </div>
-                        </td>
-                        <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1 w-fit ${
-                              trade.type === 'Buy' 
-                                ? 'bg-green-500/10 text-green-500' 
-                                : 'bg-red-500/10 text-red-500'
-                            }`}>
-                              {trade.type === 'Buy' ? <TrendingUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-                              {trade.type}
-                            </span>
-                        </td>
-                        <td className="px-6 py-4">
-                            <div className="flex items-center gap-3 text-sm">
-                              {trade.type === 'Buy' ? (
-                                <>
-                                  <div className="flex items-center gap-2">
-                                     <div className="w-5 h-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px]">$</div>
-                                     <span className="font-bold">{trade.usdcAmount}</span>
-                                     <span className="text-muted-foreground text-xs">USDC</span>
-                                  </div>
-                                  <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
-                                  <div className="flex items-center gap-2">
-                                     <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
-                                        {trade.tokenSymbol === 'EURC' ? '€' : '$'}
-                                     </div>
-                                     <span className="font-bold">{trade.tokenAmount}</span>
-                                     <span className="text-muted-foreground text-xs">{trade.tokenSymbol}</span>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="flex items-center gap-2">
-                                     <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
-                                        {trade.tokenSymbol === 'EURC' ? '€' : '$'}
-                                     </div>
-                                     <span className="font-bold">{trade.tokenAmount}</span>
-                                     <span className="text-muted-foreground text-xs">{trade.tokenSymbol}</span>
-                                  </div>
-                                  <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
-                                  <div className="flex items-center gap-2">
-                                     <div className="w-5 h-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px]">$</div>
-                                     <span className="font-bold">{trade.usdcAmount}</span>
-                                     <span className="text-muted-foreground text-xs">USDC</span>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                        </td>
-                        <td className="px-6 py-4 font-bold text-foreground">
-                            {trade.usdcAmount} <span className="text-muted-foreground text-xs font-normal">USDC</span>
-                        </td>
-                        <td className="px-6 py-4 text-muted-foreground text-xs">{trade.time}</td>
-                        <td className="px-6 py-4 text-right">
-                            <div className="flex justify-end">
-                                <ExternalLink className="w-4 h-4 text-orange-500 opacity-70 hover:opacity-100 cursor-pointer transition-opacity" />
-                            </div>
-                        </td>
-                    </tr>
-                    ))}
-                </tbody>
-                </table>
-                )}
-            </div>
-        </Card>
+            {/* Trade History (Full Width Below) */}
+            <Card className="w-full bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden col-span-1 lg:col-span-12">
+                <div className="p-5 border-b border-border/50 bg-card/30 flex items-center justify-between">
+                   <h3 className="font-bold text-base text-foreground">Trade History & Traders</h3>
+                   <span className="text-xs text-muted-foreground">Showing some recent trades</span>
+                </div>
+                <div className="overflow-x-auto">
+                    {trades.length === 0 ? (
+                      <div className="p-8 text-center text-muted-foreground text-sm">
+                        No recent trades
+                      </div>
+                    ) : (
+                    <table className="w-full text-sm text-left border-collapse">
+                    <thead className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50">
+                        <tr>
+                        <th className="px-6 py-4">Trader</th>
+                        <th className="px-6 py-4">Type</th>
+                        <th className="px-6 py-4">Token Amount</th>
+                        <th className="px-6 py-4">USDC Amount</th>
+                        <th className="px-6 py-4">Time</th>
+                        <th className="px-6 py-4 text-right">Tx</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                        {trades.map((trade, i) => (
+                        <tr key={i} className="hover:bg-secondary/20 transition-colors group">
+                            <td className="px-6 py-4 font-semibold text-foreground">
+                                <div className="flex items-center gap-2">
+                                  {trade.trader.includes('Router') ? 'Router' : trade.trader}
+                                  <ExternalLink className="w-3 h-3 text-orange-500/70 hover:text-orange-500 cursor-pointer" />
+                                </div>
+                            </td>
+                            <td className="px-6 py-4">
+                                <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1 w-fit ${
+                                  trade.type === 'Buy' 
+                                    ? 'bg-green-500/10 text-green-500' 
+                                    : 'bg-red-500/10 text-red-500'
+                                }`}>
+                                  {trade.type === 'Buy' ? <TrendingUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                                  {trade.type}
+                                </span>
+                            </td>
+                            <td className="px-6 py-4">
+                                <div className="flex items-center gap-3 text-sm font-medium">
+                                  {trade.type === 'Buy' ? (
+                                    <>
+                                      <div className="flex items-center gap-2">
+                                         <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] font-bold">$</div>
+                                         <span className="text-foreground font-bold">{trade.usdcAmount}</span>
+                                         <span className="text-muted-foreground text-xs">USDC</span>
+                                      </div>
+                                      <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
+                                      <div className="flex items-center gap-2">
+                                         <div className="w-5 h-5 rounded-full bg-yellow-400 text-yellow-900 flex items-center justify-center text-[10px] font-bold">€</div>
+                                         <span className="text-foreground font-bold">{trade.tokenAmount}</span>
+                                         <span className="text-muted-foreground text-xs">{trade.tokenSymbol}</span>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="flex items-center gap-2">
+                                         <div className="w-5 h-5 rounded-full bg-yellow-400 text-yellow-900 flex items-center justify-center text-[10px] font-bold">€</div>
+                                         <span className="text-foreground font-bold">{trade.tokenAmount}</span>
+                                         <span className="text-muted-foreground text-xs">{trade.tokenSymbol}</span>
+                                      </div>
+                                      <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
+                                      <div className="flex items-center gap-2">
+                                         <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] font-bold">$</div>
+                                         <span className="text-foreground font-bold">{trade.usdcAmount}</span>
+                                         <span className="text-muted-foreground text-xs">USDC</span>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                            </td>
+                            <td className="px-6 py-4 font-bold text-foreground">
+                                {trade.usdcAmount} <span className="text-muted-foreground text-xs font-normal">USDC</span>
+                            </td>
+                            <td className="px-6 py-4 text-muted-foreground text-xs font-medium">{trade.time}</td>
+                            <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end">
+                                    <ExternalLink className="w-4 h-4 text-orange-500/70 hover:text-orange-500 cursor-pointer transition-colors" />
+                                </div>
+                            </td>
+                        </tr>
+                        ))}
+                    </tbody>
+                    </table>
+                    )}
+                </div>
+            </Card>
+      </main>
     </div>
   );
 }

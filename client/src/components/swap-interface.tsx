@@ -235,10 +235,6 @@ export default function SwapInterface() {
         USDC: parseFloat(usdcTokenFormatted) > 0 ? parseFloat(usdcTokenFormatted).toFixed(4) : parseFloat(usdcGasFormatted).toFixed(4),
         EURC: parseFloat(eurcFormatted).toFixed(4)
       });
-        abi: ERC20_ABI,
-        functionName: 'balanceOf',
-        args: [userAddress]
-      });
 
       let eurcFormatted = "0.00";
       try {
@@ -352,6 +348,33 @@ export default function SwapInterface() {
     setOutputAmount((num * rate).toFixed(4));
   }, [inputAmount, fromToken, toToken]);
 
+
+  // TradingView Widget Script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = () => {
+      if ((window as any).TradingView) {
+        new (window as any).TradingView.widget({
+          "autosize": true,
+          "symbol": "FX:EURUSD",
+          "interval": "D",
+          "timezone": "Etc/UTC",
+          "theme": "dark",
+          "style": "1",
+          "locale": "en",
+          "enable_publishing": false,
+          "allow_symbol_change": true,
+          "container_id": "tradingview_chart",
+          "hide_side_toolbar": false,
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "gridColor": "rgba(42, 46, 57, 0.2)"
+        });
+      }
+    };
+    document.head.appendChild(script);
+  }, []);
 
   const handleApprove = async () => {
       const client = getWalletClient();
@@ -718,77 +741,8 @@ export default function SwapInterface() {
 
         {/* Right Column (Chart + History) */}
         <div className="lg:col-span-7 order-2 flex flex-col gap-6">
-            <Card className="w-full h-full min-h-[500px] bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] p-6 flex flex-col">
-                <div className="flex justify-between items-start mb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-1">
-                             <div className="flex -space-x-2">
-                                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center z-10 border-2 border-card font-bold text-xs">$</div>
-                                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center border-2 border-card font-bold text-xs text-white">€</div>
-                             </div>
-                             <h3 className="font-bold text-xl">EURC / USDC</h3>
-                        </div>
-                        <div className="flex items-baseline gap-3">
-                             <span className="text-3xl font-bold tracking-tight">$7.6055</span>
-                             <span className="text-red-500 font-medium text-sm flex items-center gap-1">
-                                 -10.07% <ArrowDown className="w-3 h-3" />
-                             </span>
-                        </div>
-                        <div className="flex flex-col mt-2 gap-1">
-                           <p className="text-xs text-muted-foreground">24h Vol: $12,402</p>
-                           <p className="text-[10px] font-mono text-muted-foreground/60 flex items-center gap-1">
-                             Pool: <span className="underline decoration-dotted cursor-help" title={POOL_ADDRESS}>{POOL_ADDRESS.slice(0,6)}...{POOL_ADDRESS.slice(-4)}</span>
-                             <ExternalLink className="w-2 h-2" />
-                           </p>
-                        </div>
-                    </div>
-                    <div className="flex bg-secondary/50 p-1 rounded-lg">
-                        {['1H', '1D', '1W', '1M'].map(t => (
-                            <button key={t} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${t === '1H' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                                {t}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex-1 w-full min-h-[300px] relative">
-                     {/* Chart Placeholder Gradient/Line */}
-                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={CHART_DATA}>
-                            <defs>
-                                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2}/>
-                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <Tooltip 
-                                contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '12px' }}
-                                itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
-                            />
-                            <Area 
-                                type="monotone" 
-                                dataKey="price" 
-                                stroke="hsl(var(--primary))" 
-                                strokeWidth={2}
-                                fillOpacity={1} 
-                                fill="url(#colorPrice)" 
-                            />
-                            <YAxis domain={['dataMin - 0.005', 'dataMax + 0.005']} hide />
-                            <XAxis dataKey="time" hide />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </div>
-                
-                <div className="mt-4 flex justify-between items-end text-xs text-muted-foreground border-t border-border/30 pt-4">
-                    <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4" />
-                        <span>Updates in real-time</span>
-                    </div>
-                    <div className="font-mono opacity-50">
-                        19:30 &nbsp;&nbsp; 20:00 &nbsp;&nbsp; 20:30
-                    </div>
-                </div>
+            <Card className="w-full min-h-[500px] bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden flex flex-col">
+                 <div id="tradingview_chart" className="w-full h-[500px] flex-1" />
             </Card>
 
             {/* Trade History */}

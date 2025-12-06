@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useToast } from "@/hooks/use-toast";
 
 // Configuration for Arc Testnet
 const ARC_CHAIN_ID_HEX = '0x4ceec2'; // 5042002
@@ -63,6 +64,7 @@ const RECENT_TRADES = [
 ];
 
 export default function SwapInterface() {
+  const { toast } = useToast();
   const [inputAmount, setInputAmount] = useState("");
   const [outputAmount, setOutputAmount] = useState("");
   const [fromToken, setFromToken] = useState(TOKENS[0]); // USDC
@@ -145,12 +147,22 @@ export default function SwapInterface() {
                 method: 'wallet_addEthereumChain',
                 params: [ARC_TESTNET_PARAMS],
               });
-            } catch (addError) {
+            } catch (addError: any) {
               console.error(addError);
+              toast({
+                title: "Network Error",
+                description: "Failed to add Arc Testnet to your wallet.",
+                variant: "destructive",
+              });
               return;
             }
           } else {
               console.error(switchError);
+              toast({
+                title: "Network Error",
+                description: "Failed to switch to Arc Testnet.",
+                variant: "destructive",
+              });
               return;
           }
         }
@@ -158,6 +170,11 @@ export default function SwapInterface() {
         setWalletConnected(true);
         fetchBalances(userAccount);
         
+        toast({
+            title: "Wallet Connected",
+            description: `Connected to ${userAccount.slice(0,6)}...${userAccount.slice(-4)}`,
+        });
+
         // Listen for account changes
         ethereum.on('accountsChanged', (newAccounts: string[]) => {
             if (newAccounts.length === 0) {
@@ -174,11 +191,28 @@ export default function SwapInterface() {
             window.location.reload();
         });
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Connection failed", error);
+        if (error.code === -32002) {
+             toast({
+                title: "Connection Pending",
+                description: "Please check your wallet extension. A connection request is already pending.",
+                variant: "destructive",
+             });
+        } else {
+             toast({
+                title: "Connection Failed",
+                description: error.message || "Failed to connect to wallet.",
+                variant: "destructive",
+             });
+        }
       }
     } else {
-      alert("Please install Rabby or MetaMask to use this feature.");
+      toast({
+        title: "Wallet Not Found",
+        description: "Please install Rabby or MetaMask to use this feature.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -211,6 +245,10 @@ export default function SwapInterface() {
       setOutputAmount("");
       // Refresh balances after "swap"
       if (account) fetchBalances(account);
+      toast({
+        title: "Swap Executed",
+        description: `Swapped ${inputAmount} ${fromToken.symbol} for ${outputAmount} ${toToken.symbol}`,
+      });
     }, 1500);
   };
 
@@ -243,7 +281,12 @@ export default function SwapInterface() {
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="font-bold">{token.symbol}</span>
-                  <span className="text-xs text-muted-foreground">{token.name}</span>
+                  <div className="flex flex-col items-start">
+                      <span className="text-xs text-muted-foreground hidden">{token.name}</span>
+                      <span className="text-[10px] text-muted-foreground/60 font-mono">
+                        {token.address === 'native' ? 'Native Token' : `${token.address.slice(0,6)}...${token.address.slice(-4)}`}
+                      </span>
+                  </div>
                 </div>
                 {selected.symbol === token.symbol && (
                   <div className="ml-auto text-primary text-sm">Selected</div>

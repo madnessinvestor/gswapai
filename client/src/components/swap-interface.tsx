@@ -377,7 +377,7 @@ export default function SwapInterface() {
             [amountIn, amountOutMin, account as `0x${string}`]
           );
           
-          data = selector + encodedParams.slice(2); // Remove 0x from params to concatenate
+          const data = selector + encodedParams.slice(2); // Remove 0x from params to concatenate
 
           console.log("Sending Transaction to Pool:", targetAddress);
           console.log("Data:", data);

@@ -184,8 +184,8 @@ export default function SwapInterface() {
   const [chartTimeframe, setChartTimeframe] = useState("1D");
   
   // Calculate current exchange rate
-  const currentRate = fromToken.symbol === "EURC" && toToken.symbol === "USDC" ? 7.6055 : 
-                      fromToken.symbol === "USDC" && toToken.symbol === "EURC" ? (1 / 7.6055) : 1;
+  const currentRate = fromToken.symbol === "EURC" && toToken.symbol === "USDC" ? 7.56 : 
+                      fromToken.symbol === "USDC" && toToken.symbol === "EURC" ? (1 / 7.56) : 1;
 
   // Dynamic Chart Data based on pair
   const chartData = generateChartData(currentRate, currentRate * 0.005);
@@ -320,10 +320,9 @@ export default function SwapInterface() {
      if (walletConnected && account && inputAmount) {
          checkAllowance();
      }
-  }, [walletConnected, account, inputAmount, fromToken]);
+  }, [walletConnected, account, inputAmount, fromToken]); // Re-run when these change
 
-
-  const connectWallet = async () => {
+  const handleApprove = async () => {
     const client = getWalletClient();
     if (!client) {
         toast({ title: "Wallet not found", description: "Please install MetaMask or Rabby", variant: "destructive" });
@@ -362,12 +361,51 @@ export default function SwapInterface() {
     const num = parseFloat(inputAmount);
     if (isNaN(num)) return;
     
-    setOutputAmount((num * currentRate).toFixed(4));
+    // Rate adjusted to ~7.56 based on successful transaction to avoid "Insufficient output amount"
+    const rate = fromToken.symbol === "EURC" && toToken.symbol === "USDC" ? 7.56 : 
+                 fromToken.symbol === "USDC" && toToken.symbol === "EURC" ? (1 / 7.56) : 1;
+                 
+    setOutputAmount((num * rate).toFixed(4));
   }, [inputAmount, fromToken, toToken, currentRate]);
 
-  // Removed old TradingView Effect
-  
-  const handleApprove = async () => {
+  // Check Allowance with explicit logging
+  const checkAllowance = async () => {
+    if (!account) {
+      setNeedsApproval(false);
+      return;
+    }
+
+    const client = getWalletClient();
+    if (!client) return;
+
+    try {
+        const encodedAllowance = encodeFunctionData({
+            abi: ERC20_ABI,
+            functionName: 'allowance',
+            args: [account, POOL_ADDRESS]
+        });
+
+        console.log(`Checking allowance for ${fromToken.symbol} (${fromToken.address})`);
+        
+        const allowanceResult = await (client as any).request({
+            method: 'eth_call',
+            params: [{
+                to: fromToken.address as `0x${string}`,
+                data: encodedAllowance
+            }, 'latest']
+        });
+        
+        const currentAllowance = BigInt(allowanceResult);
+        const amountToSpend = parseUnits(inputAmount || "0", fromToken.decimals);
+        
+        console.log(`Allowance: ${formatUnits(currentAllowance, fromToken.decimals)}, Required: ${inputAmount}`);
+
+        setNeedsApproval(currentAllowance < amountToSpend);
+
+    } catch (e) {
+        console.error("Check allowance failed", e);
+    }
+  };
       const client = getWalletClient();
       if (!client || !account) return;
       

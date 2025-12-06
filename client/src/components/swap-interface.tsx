@@ -187,22 +187,14 @@ export default function SwapInterface() {
     if (!client) return;
 
     try {
-      // Native Balance (USDC) - Arc Testnet uses USDC as gas, but it might be tracked as 18 decimals for GAS
-      // However, for the swap we treat it as ERC20.
-      // If the user has "Native USDC", does it show up in balanceOf(0x36...)?
-      // Let's check both and take the non-zero or consistent one.
-      // Actually, if we set decimals: 6 for USDC, we should format it with 6.
-      
-      // Fetch Native Balance (Gas)
+      // 1. Fetch Native Balance (Gas) - usually 18 decimals
       const nativeBal = await (client as any).request({
         method: 'eth_getBalance',
         params: [userAddress as `0x${string}`, 'latest']
       });
-      // Gas is usually 18 decimals even if the token is 6 decimals on contract
-      // But let's try formatted with 18 first as it was working before for display
-      const usdcGasFormatted = formatUnits(BigInt(nativeBal), 18); 
+      const usdcGasFormatted = formatUnits(BigInt(nativeBal), 18);
 
-      // Fetch ERC20 Balance of USDC Contract
+      // 2. Fetch USDC ERC20 Balance - 6 decimals
       const encodedBalanceOfUSDC = encodeFunctionData({
         abi: ERC20_ABI,
         functionName: 'balanceOf',
@@ -223,35 +215,30 @@ export default function SwapInterface() {
          console.warn("Failed to fetch USDC ERC20 balance", e);
       }
 
-      // Use the ERC20 balance if available and non-zero, otherwise fallback to gas balance (formatted as 18? or 6?)
-      // If 0x989680 is 10 USDC, then 10^6 is the base.
-      // If gas balance is 35.77... and implies 35 * 10^18, then gas is 18 decimals.
-      // We will trust the ERC20 balance for the SWAP logic.
-      
-      // Update: The user screenshot showed 35.7765 USDC.
-      // If we use 6 decimals for token, we should use that.
-      
-      setBalances({
-        USDC: parseFloat(usdcTokenFormatted) > 0 ? parseFloat(usdcTokenFormatted).toFixed(4) : parseFloat(usdcGasFormatted).toFixed(4),
-        EURC: parseFloat(eurcFormatted).toFixed(4)
+      // 3. Fetch EURC ERC20 Balance - 6 decimals
+      const encodedBalanceOfEURC = encodeFunctionData({
+        abi: ERC20_ABI,
+        functionName: 'balanceOf',
+        args: [userAddress]
       });
 
       let eurcFormatted = "0.00";
       try {
-        const tokenBal = await (client as any).request({
+        const tokenBalEURC = await (client as any).request({
           method: 'eth_call',
           params: [{
             to: TOKENS[1].address as `0x${string}`,
-            data: encodedBalanceOf
+            data: encodedBalanceOfEURC
           }, 'latest']
         });
-        eurcFormatted = formatUnits(BigInt(tokenBal), 6);
+        eurcFormatted = formatUnits(BigInt(tokenBalEURC), 6);
       } catch (e) {
-        console.warn("Failed to fetch ERC20 balance", e);
+        console.warn("Failed to fetch EURC ERC20 balance", e);
       }
 
+      // 4. Update State
       setBalances({
-        USDC: parseFloat(usdcFormatted).toFixed(4),
+        USDC: parseFloat(usdcTokenFormatted) > 0 ? parseFloat(usdcTokenFormatted).toFixed(4) : parseFloat(usdcGasFormatted).toFixed(4),
         EURC: parseFloat(eurcFormatted).toFixed(4)
       });
 

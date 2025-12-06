@@ -185,7 +185,7 @@ export default function SwapInterface() {
   
   // Calculate current exchange rate
   const currentRate = fromToken.symbol === "EURC" && toToken.symbol === "USDC" ? 7.56 : 
-                      fromToken.symbol === "USDC" && toToken.symbol === "EURC" ? (1 / 7.56) : 1;
+                      fromToken.symbol === "USDC" && toToken.symbol === "EURC" ? (1 / 7.6055) : 1;
 
   // Dynamic Chart Data based on pair
   const chartData = generateChartData(currentRate, currentRate * 0.005);
@@ -365,11 +365,7 @@ export default function SwapInterface() {
     const num = parseFloat(inputAmount);
     if (isNaN(num)) return;
     
-    // Rate adjusted to ~7.56 based on successful transaction to avoid "Insufficient output amount"
-    const rate = fromToken.symbol === "EURC" && toToken.symbol === "USDC" ? 7.56 : 
-                 fromToken.symbol === "USDC" && toToken.symbol === "EURC" ? (1 / 7.56) : 1;
-                 
-    setOutputAmount((num * rate).toFixed(4));
+    setOutputAmount((num * currentRate).toFixed(4));
   }, [inputAmount, fromToken, toToken, currentRate]);
 
   const handleApprove = async () => {

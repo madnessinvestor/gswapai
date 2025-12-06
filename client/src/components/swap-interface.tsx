@@ -303,9 +303,12 @@ export default function SwapInterface() {
   }, [account]);
 
   // Filter trades based on selection
-  // Note: myTrades already contains only trades for the connected account (filtered in useEffect/loading)
-  // But we double check here to be safe if account changes rapidly
-  const userTrades = myTrades; 
+  // Ensure we only show trades for the CURRENT connected account in "My Trades"
+  // This strict filtering prevents any "mixing" if state updates are pending
+  const userTrades = myTrades.filter(t => 
+    t.fullTrader && account && t.fullTrader.toLowerCase() === account.toLowerCase()
+  );
+  
   const sourceTrades = showMyTrades && account ? userTrades : trades;
   const totalPages = Math.ceil(sourceTrades.length / itemsPerPage);
   

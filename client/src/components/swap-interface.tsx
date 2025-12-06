@@ -14,20 +14,39 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+// Configuration for Arc Testnet
+const ARC_CHAIN_ID_HEX = '0x4ceec2'; // 5042002
+const ARC_RPC_URL = 'https://rpc.testnet.arc.network';
+
+// Token Definitions
 const TOKENS = [
-  { symbol: "USDC", name: "USD Coin", icon: "$", address: "0x3600000000000000000000000000000000000000", decimals: 6 },
-  { symbol: "EURC", name: "Euro Coin", icon: "€", address: "0x...", decimals: 6 },
+  { 
+    symbol: "USDC", 
+    name: "USD Coin", 
+    icon: "$", 
+    address: "native", // USDC is native on Arc
+    decimals: 6 
+  },
+  { 
+    symbol: "EURC", 
+    name: "Euro Coin", 
+    icon: "€", 
+    // Placeholder address for EURC - User needs to provide the real one if not listed
+    // Using a zero address for now or we could use one of the test tokens if known
+    address: "0x0000000000000000000000000000000000000000", 
+    decimals: 6 
+  },
 ];
 
 const ARC_TESTNET_PARAMS = {
-  chainId: '0x4ceec2', // 5042002 in hex
+  chainId: ARC_CHAIN_ID_HEX,
   chainName: 'Arc Testnet',
   nativeCurrency: {
     name: 'USDC',
     symbol: 'USDC',
     decimals: 6,
   },
-  rpcUrls: ['https://rpc.testnet.arc.network'],
+  rpcUrls: [ARC_RPC_URL],
   blockExplorerUrls: ['https://testnet.arcscan.app'],
 };
 
@@ -37,58 +56,10 @@ const CHART_DATA = Array.from({ length: 24 }, (_, i) => ({
   price: 1.05 + Math.random() * 0.02 - 0.01,
 }));
 
-// Mock Data for Recent Trades
 const RECENT_TRADES = [
-  { 
-    hash: "0x44cb...7e7f", 
-    type: "Buy", 
-    amountIn: "5.0000", 
-    tokenIn: "USDC", 
-    amountOut: "4.7619", 
-    tokenOut: "EURC", 
-    value: "5.0000", 
-    time: "13m ago" 
-  },
-  { 
-    hash: "0x8a21...9b3c", 
-    type: "Sell", 
-    amountIn: "10.0000", 
-    tokenIn: "EURC", 
-    amountOut: "10.4820", 
-    tokenOut: "USDC", 
-    value: "10.5000", 
-    time: "15m ago" 
-  },
-  { 
-    hash: "0x1d4f...2e8a", 
-    type: "Buy", 
-    amountIn: "100.0000", 
-    tokenIn: "USDC", 
-    amountOut: "95.2380", 
-    tokenOut: "EURC", 
-    value: "100.0000", 
-    time: "22m ago" 
-  },
-  { 
-    hash: "0x9c3e...5f1d", 
-    type: "Sell", 
-    amountIn: "50.0000", 
-    tokenIn: "EURC", 
-    amountOut: "52.4100", 
-    tokenOut: "USDC", 
-    value: "52.5000", 
-    time: "28m ago" 
-  },
-  { 
-    hash: "0x3b7a...8c4e", 
-    type: "Buy", 
-    amountIn: "25.0000", 
-    tokenIn: "USDC", 
-    amountOut: "23.8095", 
-    tokenOut: "EURC", 
-    value: "25.0000", 
-    time: "35m ago" 
-  },
+  { hash: "0x44cb...7e7f", type: "Buy", amountIn: "5.0000", tokenIn: "USDC", amountOut: "4.7619", tokenOut: "EURC", time: "13m ago" },
+  { hash: "0x8a21...9b3c", type: "Sell", amountIn: "10.0000", tokenIn: "EURC", amountOut: "10.4820", tokenOut: "USDC", time: "15m ago" },
+  { hash: "0x1d4f...2e8a", type: "Buy", amountIn: "100.0000", tokenIn: "USDC", amountOut: "95.2380", tokenOut: "EURC", time: "22m ago" },
 ];
 
 export default function SwapInterface() {
@@ -98,10 +69,123 @@ export default function SwapInterface() {
   const [toToken, setToToken] = useState(TOKENS[1]); // EURC
   const [isSwapping, setIsSwapping] = useState(false);
   const [walletConnected, setWalletConnected] = useState(false);
+  const [account, setAccount] = useState("");
   const [slippage, setSlippage] = useState("0.5");
   const [balances, setBalances] = useState({ USDC: "0.00", EURC: "0.00" });
 
-  // Mock exchange rate calculation (1 EURC ≈ 1.05 USDC)
+  // Helper to format balance
+  const formatBalance = (hex: string, decimals: number) => {
+    const val = parseInt(hex, 16);
+    return (val / Math.pow(10, decimals)).toFixed(4);
+  };
+
+  // Fetch Balances
+  const fetchBalances = async (userAddress: string) => {
+    const ethereum = (window as any).ethereum;
+    if (!ethereum) return;
+    
+    try {
+      // 1. Fetch USDC (Native) Balance
+      const nativeBalanceHex = await ethereum.request({
+        method: 'eth_getBalance',
+        params: [userAddress, 'latest'],
+      });
+      const usdcBal = formatBalance(nativeBalanceHex, 6);
+
+      // 2. Fetch EURC Balance (ERC20)
+      // Function signature for balanceOf(address) is 0x70a08231
+      // Pad address to 32 bytes (64 hex chars)
+      const paddedAddress = userAddress.replace('0x', '').padStart(64, '0');
+      const data = '0x70a08231' + paddedAddress;
+      
+      let eurcBal = "0.00";
+      // Only call if we have a valid contract address
+      if (TOKENS[1].address !== "0x0000000000000000000000000000000000000000") {
+          try {
+            const tokenBalanceHex = await ethereum.request({
+                method: 'eth_call',
+                params: [{
+                    to: TOKENS[1].address,
+                    data: data
+                }, 'latest']
+            });
+            eurcBal = formatBalance(tokenBalanceHex, 6);
+          } catch (e) {
+              console.warn("Failed to fetch ERC20 balance", e);
+          }
+      }
+
+      setBalances({
+        USDC: usdcBal,
+        EURC: eurcBal
+      });
+
+    } catch (error) {
+      console.error("Error fetching balances:", error);
+    }
+  };
+
+  // Connect Wallet
+  const connectWallet = async () => {
+    const ethereum = (window as any).ethereum;
+    if (typeof ethereum !== 'undefined') {
+      try {
+        // 1. Request Accounts
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+        const userAccount = accounts[0];
+        setAccount(userAccount);
+        
+        // 2. Switch/Add Network
+        try {
+          await ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: ARC_TESTNET_PARAMS.chainId }],
+          });
+        } catch (switchError: any) {
+          if (switchError.code === 4902) {
+            try {
+              await ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [ARC_TESTNET_PARAMS],
+              });
+            } catch (addError) {
+              console.error(addError);
+              return;
+            }
+          } else {
+              console.error(switchError);
+              return;
+          }
+        }
+        
+        setWalletConnected(true);
+        fetchBalances(userAccount);
+        
+        // Listen for account changes
+        ethereum.on('accountsChanged', (newAccounts: string[]) => {
+            if (newAccounts.length === 0) {
+                setWalletConnected(false);
+                setAccount("");
+            } else {
+                setAccount(newAccounts[0]);
+                fetchBalances(newAccounts[0]);
+            }
+        });
+
+        // Listen for chain changes
+        ethereum.on('chainChanged', () => {
+            window.location.reload();
+        });
+
+      } catch (error) {
+        console.error("Connection failed", error);
+      }
+    } else {
+      alert("Please install Rabby or MetaMask to use this feature.");
+    }
+  };
+
+  // Mock exchange rate calculation
   useEffect(() => {
     if (!inputAmount) {
       setOutputAmount("");
@@ -117,62 +201,19 @@ export default function SwapInterface() {
     setOutputAmount((num * rate).toFixed(4));
   }, [inputAmount, fromToken, toToken]);
 
-  const connectWallet = async () => {
-    const ethereum = (window as any).ethereum;
-    if (typeof ethereum !== 'undefined') {
-      try {
-        await ethereum.request({ method: 'eth_requestAccounts' });
-        
-        try {
-          await ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: ARC_TESTNET_PARAMS.chainId }],
-          });
-        } catch (switchError: any) {
-          if (switchError.code === 4902) {
-            try {
-              await ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [ARC_TESTNET_PARAMS],
-              });
-            } catch (addError) {
-              console.error(addError);
-            }
-          }
-        }
-        setWalletConnected(true);
-        setBalances({ USDC: "1000.00", EURC: "0.00" }); // Mock initial balance
-      } catch (error) {
-        console.error(error);
-      }
-    } else {
-      setWalletConnected(true);
-      setBalances({ USDC: "1000.00", EURC: "0.00" });
-    }
-  };
-
   const handleSwap = () => {
     if (!walletConnected) {
       connectWallet();
       return;
     }
-    
     setIsSwapping(true);
+    // Mock swap execution
     setTimeout(() => {
       setIsSwapping(false);
       setInputAmount("");
       setOutputAmount("");
-      // Swap tokens
-      const temp = fromToken;
-      setFromToken(toToken);
-      setToToken(temp);
-      
-      // Mock balance update
-      if (fromToken.symbol === "USDC") {
-        setBalances({ USDC: (parseFloat(balances.USDC) - parseFloat(inputAmount)).toFixed(2), EURC: (parseFloat(balances.EURC) + parseFloat(outputAmount)).toFixed(2) });
-      } else {
-        setBalances({ EURC: (parseFloat(balances.EURC) - parseFloat(inputAmount)).toFixed(2), USDC: (parseFloat(balances.USDC) + parseFloat(outputAmount)).toFixed(2) });
-      }
+      // Refresh balances after "swap"
+      if (account) fetchBalances(account);
     }, 1500);
   };
 
@@ -293,7 +334,7 @@ export default function SwapInterface() {
             onClick={connectWallet}
           >
             <Wallet className="w-4 h-4" />
-            {walletConnected ? "0x12...4F8A" : "Connect to Arc"}
+            {walletConnected && account ? `${account.slice(0,6)}...${account.slice(-4)}` : "Connect to Arc"}
           </Button>
         </div>
       </nav>
@@ -424,7 +465,7 @@ export default function SwapInterface() {
                 <div className="flex justify-between mb-2">
                   <span className="text-xs font-medium text-muted-foreground">You pay</span>
                   <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                    Balance: <span className="text-primary">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
+                    Balance: <span className="text-primary">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "--"}</span>
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
@@ -460,7 +501,7 @@ export default function SwapInterface() {
                 <div className="flex justify-between mb-2">
                   <span className="text-xs font-medium text-muted-foreground">You receive</span>
                   <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                    Balance: <span className="text-primary">{walletConnected ? balances[toToken.symbol as keyof typeof balances] : "0.00"}</span>
+                    Balance: <span className="text-primary">{walletConnected ? balances[toToken.symbol as keyof typeof balances] : "--"}</span>
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">

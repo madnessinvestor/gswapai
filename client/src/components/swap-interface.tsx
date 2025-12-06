@@ -415,11 +415,11 @@ export default function SwapInterface() {
           // Use POOL_ADDRESS for the swap, not Router
           const targetAddress = POOL_ADDRESS;
 
-          // Function signature 0x84b065d3 matches the successful transaction
-          // We construct the calldata manually to match exactly what works
-          // Structure: Selector(4 bytes) + AmountIn(32 bytes) + AmountOutMin(32 bytes) + Recipient(32 bytes)
+          // Determine correct function selector based on swap direction
+          // USDC -> EURC: 0x84b065d3
+          // EURC -> USDC: 0x99d96739
+          const selector = fromToken.symbol === "USDC" ? "0x84b065d3" : "0x99d96739";
           
-          const selector = "0x84b065d3";
           const encodedParams = encodeAbiParameters(
             [
               { type: 'uint256' },
@@ -432,6 +432,8 @@ export default function SwapInterface() {
           const data = selector + encodedParams.slice(2); // Remove 0x from params to concatenate
 
           console.log("Sending Transaction to Pool:", targetAddress);
+          console.log("Direction:", fromToken.symbol, "->", toToken.symbol);
+          console.log("Selector:", selector);
           console.log("Data:", data);
 
           const hash = await client.sendTransaction({

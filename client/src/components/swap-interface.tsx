@@ -214,6 +214,16 @@ const generateChartData = (basePrice: number, volatility: number) => {
   ];
 };
 
+// Helper for random hex string
+const randomHex = (length: number) => {
+  let result = '';
+  const characters = '0123456789abcdef';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * 16));
+  }
+  return result;
+};
+
 export default function SwapInterface() {
   const { toast } = useToast();
   const [inputAmount, setInputAmount] = useState("");
@@ -424,16 +434,21 @@ export default function SwapInterface() {
         const amount = (Math.random() * 100 + 1).toFixed(4);
         const usdcAmt = (parseFloat(amount) * (isBuy ? 1/7.56 : 7.56)).toFixed(4);
         
-        const fullHash = `0x${Math.random().toString(16).substr(2, 64).padEnd(64, '0')}`;
+        const hashHex = randomHex(64);
+        const fullHash = `0x${hashHex}`;
+        
+        const traderHex = randomHex(40);
+        const fullTrader = `0x${traderHex}`;
+
         const randomTrade = {
-            trader: `0x${Math.random().toString(16).substr(2, 4)}...${Math.random().toString(16).substr(2, 4)}`,
-            fullTrader: `0x${Math.random().toString(16).substr(2, 40).padEnd(40, '0')}`,
+            trader: `0x${traderHex.slice(0, 4)}...${traderHex.slice(-4)}`,
+            fullTrader: fullTrader,
             type: isBuy ? 'Buy' : 'Sell',
             tokenAmount: amount,
             tokenSymbol: 'EURC', // Simplified to assume EURC/USDC pair primarily
             usdcAmount: usdcAmt, 
             time: "Just now",
-            hash: `${fullHash.slice(0, 6)}...`,
+            hash: `0x${hashHex.slice(0, 4)}...${hashHex.slice(-4)}`,
             fullHash: fullHash
         };
         

@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { createWalletClient, custom, parseUnits, encodeFunctionData, formatUnits, encodeAbiParameters } from 'viem';
-import logoImage from '@assets/62c84d4d-8ef8-4dd7-80b4-78a7c37603d8_1765058802117.png';
+import logoImage from '@assets/d0bbfa09-77e9-4527-a95a-3ec275fefad8_1765059425973.png';
 // import { arc } from 'viem/chains'; // Removed as we define custom chain
 
 // Define Arc Testnet Custom Chain for Viem
@@ -658,336 +658,337 @@ export default function SwapInterface() {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-6xl mx-auto p-4 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <main className="flex-1 w-full max-w-7xl mx-auto p-4 lg:p-8 space-y-8">
         
-        {/* Swap Card (Left) */}
-        <div className="lg:col-span-5 order-1">
-            <Card className="w-full bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden">
-              <div className="p-5 flex justify-between items-center border-b border-border/50 bg-card/30">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-bold text-lg">Swap</h2>
-                  <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold uppercase tracking-wide border border-orange-500/20">
-                    Arc Testnet Only
-                  </span>
-                </div>
-                <SettingsModal />
-              </div>
-
-              <div className="p-4 space-y-1">
-                {/* FROM Input */}
-                <div className="bg-secondary/30 rounded-[20px] p-4 hover:bg-secondary/40 transition-colors border border-transparent hover:border-border/50 group">
-                  <div className="flex justify-between mb-3">
-                    <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">From</span>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Balance: <span className="text-foreground">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <input
-                      type="text"
-                      placeholder="0.0"
-                      className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans"
-                      value={inputAmount}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (/^\d*\.?\d*$/.test(val)) setInputAmount(val);
-                      }}
-                    />
-                    <TokenSelector selected={fromToken} onSelect={setFromToken} />
-                  </div>
-                </div>
-
-                {/* Separator */}
-                <div className="relative h-2 z-10 flex justify-center items-center">
-                    <div 
-                        className="bg-background p-1.5 rounded-full shadow-md border border-border/50 cursor-pointer hover:rotate-180 transition-all duration-500 hover:scale-110"
-                        onClick={() => {
-                           const t = fromToken; setFromToken(toToken); setToToken(t);
-                           const a = inputAmount; setInputAmount(outputAmount); setOutputAmount(a);
-                        }}
-                    >
-                        <ArrowDown className="w-4 h-4 text-primary" />
+        {/* Top Section: Swap and Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Swap Card (Left) */}
+            <div className="lg:col-span-5 order-1">
+                <Card className="w-full bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden">
+                  <div className="p-5 flex justify-between items-center border-b border-border/50 bg-card/30">
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-bold text-lg">Swap</h2>
+                      <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold uppercase tracking-wide border border-orange-500/20">
+                        Arc Testnet Only
+                      </span>
                     </div>
-                </div>
-
-                {/* TO Input */}
-                <div className="bg-secondary/30 rounded-[20px] p-4 hover:bg-secondary/40 transition-colors border border-transparent hover:border-border/50 group">
-                  <div className="flex justify-between mb-3">
-                    <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">To</span>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Balance: <span className="text-foreground">{walletConnected ? balances[toToken.symbol as keyof typeof balances] : "0.00"}</span>
-                    </span>
+                    <SettingsModal />
                   </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <input
-                      type="text"
-                      placeholder="0.0"
-                      readOnly
-                      className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans cursor-default"
-                      value={outputAmount}
-                    />
-                    <TokenSelector selected={toToken} onSelect={setToToken} />
-                  </div>
-                </div>
 
-                {/* Detailed Info Section */}
-                {inputAmount && (
-                  <div className="bg-background/40 rounded-xl p-3 space-y-2 mt-2 border border-border/40">
-                    <div className="flex justify-between text-xs">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Info className="w-3 h-3" /> Rate
+                  <div className="p-4 space-y-1">
+                    {/* FROM Input */}
+                    <div className="bg-secondary/30 rounded-[20px] p-4 hover:bg-secondary/40 transition-colors border border-transparent hover:border-border/50 group">
+                      <div className="flex justify-between mb-3">
+                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">From</span>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Balance: <span className="text-foreground">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
+                        </span>
                       </div>
-                      <div className="font-medium">
-                        1 {fromToken.symbol} = {(parseFloat(outputAmount)/parseFloat(inputAmount) || 0).toFixed(6)} {toToken.symbol}
-                      </div>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Info className="w-3 h-3" /> Price impact
-                      </div>
-                      <div className="font-medium text-green-500">
-                        0.302%
-                      </div>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Settings className="w-3 h-3" /> Max slippage
-                      </div>
-                      <div className="font-medium">
-                        {slippage}%
-                      </div>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Info className="w-3 h-3" /> Receive at least
-                      </div>
-                      <div className="font-medium">
-                        {(parseFloat(outputAmount) * (1 - parseFloat(slippage)/100)).toFixed(6)} {toToken.symbol}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Min Amount Warning */}
-                {isAmountTooLow && (
-                   <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs font-bold text-red-500">Transaction Failed</p>
-                        <p className="text-[10px] text-red-500/80">Minimum value is $5 USDC. Current value: ${usdValue.toFixed(2)} USDC</p>
-                      </div>
-                   </div>
-                )}
-              </div>
-
-              <div className="p-4 pt-0">
-                {needsApproval ? (
-                     <Button 
-                        className="w-full h-14 text-lg font-bold rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
-                        onClick={handleApprove}
-                        disabled={!walletConnected || !inputAmount || isApproving || isAmountTooLow}
-                      >
-                        {isApproving ? (
-                          <div className="flex items-center gap-2"><RefreshCw className="animate-spin w-5 h-5"/> Approving...</div>
-                        ) : `Approve ${fromToken.symbol}`}
-                      </Button>
-                ) : (
-                    <Button 
-                      className={`w-full h-14 text-lg font-bold rounded-xl shadow-lg ${!walletConnected ? 'bg-secondary text-muted-foreground' : 'bg-primary hover:bg-primary/90 shadow-primary/20'}`}
-                      onClick={handleSwap}
-                      disabled={walletConnected && (!inputAmount || isSwapping || isAmountTooLow)}
-                    >
-                      {isSwapping ? (
-                        <div className="flex items-center gap-2"><RefreshCw className="animate-spin w-5 h-5"/> Swapping...</div>
-                      ) : !walletConnected ? "Connect Wallet" : !inputAmount ? "Enter Amount" : isAmountTooLow ? "Amount too low" : "Swap"}
-                    </Button>
-                )}
-                
-                <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                    <Info className="w-3 h-3" />
-                    <span>No price impact (Testnet)</span>
-                </div>
-              </div>
-            </Card>
-        </div>
-
-        {/* Right Column (Chart + History) */}
-        <div className="lg:col-span-7 order-2 flex flex-col gap-6">
-            <Card className="w-full min-h-[500px] bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden flex flex-col">
-                 <div className="p-6 border-b border-border/50 bg-card/30 flex justify-between items-center">
-                   <div>
-                     <div className="flex items-baseline gap-2">
-                       <h2 className="text-3xl font-bold text-foreground">1.00 {fromToken.symbol}</h2>
-                       <span className="text-sm text-muted-foreground"> = {currentRate.toFixed(4)} {toToken.symbol}</span>
-                     </div>
-                     <div className="flex items-center gap-2 mt-1">
-                       <span className={`text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'} flex items-center gap-1`}>
-                         {isPositive ? <TrendingUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />} 
-                         {isPositive ? '+' : ''}{priceChange} ({priceChangePercent}%)
-                       </span>
-                       <span className="text-xs text-muted-foreground">Past {chartTimeframe}</span>
-                     </div>
-                   </div>
-                   <div className="flex gap-2">
-                     {["1H", "1D", "1W", "1M"].map(period => (
-                       <Button 
-                        key={period} 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setChartTimeframe(period)}
-                        className={`h-8 px-3 rounded-lg text-xs font-semibold ${chartTimeframe === period ? 'bg-secondary text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                       >
-                         {period}
-                       </Button>
-                     ))}
-                   </div>
-                 </div>
-                 
-                 <div className="flex-1 w-full min-h-[350px] p-4 relative">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>
-                        <defs>
-                          <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={isPositive ? "#22c55e" : "#ef4444"} stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor={isPositive ? "#22c55e" : "#ef4444"} stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <XAxis 
-                          dataKey="time" 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: '#6B7280', fontSize: 12 }}
-                          dy={10}
-                        />
-                        <YAxis 
-                          domain={['dataMin', 'dataMax']} 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: '#6B7280', fontSize: 12 }}
-                          dx={-10}
-                          tickFormatter={(value) => value.toFixed(4)}
-                        />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'rgba(17, 24, 39, 0.9)', 
-                            border: '1px solid rgba(75, 85, 99, 0.4)',
-                            borderRadius: '12px',
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      <div className="flex items-center justify-between gap-4">
+                        <input
+                          type="text"
+                          placeholder="0.0"
+                          className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans"
+                          value={inputAmount}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d*\.?\d*$/.test(val)) setInputAmount(val);
                           }}
-                          itemStyle={{ color: '#fff' }}
-                          labelStyle={{ color: '#9CA3AF', marginBottom: '4px' }}
-                          formatter={(value: number) => [value.toFixed(4), toToken.symbol]}
                         />
-                        <Area 
-                          type="monotone" 
-                          dataKey="price" 
-                          stroke={isPositive ? "#22c55e" : "#ef4444"} 
-                          strokeWidth={3}
-                          fillOpacity={1} 
-                          fill="url(#colorPrice)" 
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                 </div>
-            </Card>
-
-            {/* Trade History */}
-            <Card className="w-full bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden">
-                <div className="p-5 border-b border-border/50 bg-card/30 flex items-center justify-between">
-                   <h3 className="font-bold text-sm flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> Trade History & Traders</h3>
-                </div>
-                <div className="overflow-x-auto">
-                    {trades.length === 0 ? (
-                      <div className="p-8 text-center text-muted-foreground text-sm">
-                        No recent trades
+                        <TokenSelector selected={fromToken} onSelect={setFromToken} />
                       </div>
-                    ) : (
-                    <table className="w-full text-sm text-left border-collapse">
-                    <thead className="text-xs text-muted-foreground border-b border-border/50">
-                        <tr>
-                        <th className="px-6 py-4 font-semibold uppercase tracking-wider">Trader</th>
-                        <th className="px-6 py-4 font-semibold uppercase tracking-wider">Type</th>
-                        <th className="px-6 py-4 font-semibold uppercase tracking-wider">Token Amount</th>
-                        <th className="px-6 py-4 font-semibold uppercase tracking-wider">USDC Amount</th>
-                        <th className="px-6 py-4 font-semibold uppercase tracking-wider">Time</th>
-                        <th className="px-6 py-4 font-semibold uppercase tracking-wider text-right">Tx</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/30">
-                        {trades.map((trade, i) => (
-                        <tr key={i} className="hover:bg-secondary/20 transition-colors group">
-                            <td className="px-6 py-4 font-medium text-foreground group-hover:text-primary transition-colors">
-                                <div className="flex items-center gap-2">
-                                  {trade.trader.includes('Router') ? 'Router' : trade.trader}
-                                  <ExternalLink className="w-3 h-3 text-orange-500 opacity-70 hover:opacity-100 cursor-pointer" />
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">
-                                <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1 w-fit ${
-                                  trade.type === 'Buy' 
-                                    ? 'bg-green-500/10 text-green-500' 
-                                    : 'bg-red-500/10 text-red-500'
-                                }`}>
-                                  {trade.type === 'Buy' ? <TrendingUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-                                  {trade.type}
-                                </span>
-                            </td>
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-3 text-sm">
-                                  {trade.type === 'Buy' ? (
-                                    <>
-                                      <div className="flex items-center gap-2">
-                                         <div className="w-5 h-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px]">$</div>
-                                         <span className="font-bold">{trade.usdcAmount}</span>
-                                         <span className="text-muted-foreground text-xs">USDC</span>
-                                      </div>
-                                      <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
-                                      <div className="flex items-center gap-2">
-                                         <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
-                                            {trade.tokenSymbol === 'EURC' ? '€' : '$'}
-                                         </div>
-                                         <span className="font-bold">{trade.tokenAmount}</span>
-                                         <span className="text-muted-foreground text-xs">{trade.tokenSymbol}</span>
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <div className="flex items-center gap-2">
-                                         <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
-                                            {trade.tokenSymbol === 'EURC' ? '€' : '$'}
-                                         </div>
-                                         <span className="font-bold">{trade.tokenAmount}</span>
-                                         <span className="text-muted-foreground text-xs">{trade.tokenSymbol}</span>
-                                      </div>
-                                      <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
-                                      <div className="flex items-center gap-2">
-                                         <div className="w-5 h-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px]">$</div>
-                                         <span className="font-bold">{trade.usdcAmount}</span>
-                                         <span className="text-muted-foreground text-xs">USDC</span>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 font-bold text-foreground">
-                                {trade.usdcAmount} <span className="text-muted-foreground text-xs font-normal">USDC</span>
-                            </td>
-                            <td className="px-6 py-4 text-muted-foreground text-xs">{trade.time}</td>
-                            <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end">
-                                    <ExternalLink className="w-4 h-4 text-orange-500 opacity-70 hover:opacity-100 cursor-pointer transition-opacity" />
-                                </div>
-                            </td>
-                        </tr>
-                        ))}
-                    </tbody>
-                    </table>
+                    </div>
+
+                    {/* Separator */}
+                    <div className="relative h-2 z-10 flex justify-center items-center">
+                        <div 
+                            className="bg-background p-1.5 rounded-full shadow-md border border-border/50 cursor-pointer hover:rotate-180 transition-all duration-500 hover:scale-110"
+                            onClick={() => {
+                               const t = fromToken; setFromToken(toToken); setToToken(t);
+                               const a = inputAmount; setInputAmount(outputAmount); setOutputAmount(a);
+                            }}
+                        >
+                            <ArrowDown className="w-4 h-4 text-primary" />
+                        </div>
+                    </div>
+
+                    {/* TO Input */}
+                    <div className="bg-secondary/30 rounded-[20px] p-4 hover:bg-secondary/40 transition-colors border border-transparent hover:border-border/50 group">
+                      <div className="flex justify-between mb-3">
+                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">To</span>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Balance: <span className="text-foreground">{walletConnected ? balances[toToken.symbol as keyof typeof balances] : "0.00"}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <input
+                          type="text"
+                          placeholder="0.0"
+                          readOnly
+                          className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans cursor-default"
+                          value={outputAmount}
+                        />
+                        <TokenSelector selected={toToken} onSelect={setToToken} />
+                      </div>
+                    </div>
+
+                    {/* Detailed Info Section */}
+                    {inputAmount && (
+                      <div className="bg-background/40 rounded-xl p-3 space-y-2 mt-2 border border-border/40">
+                        <div className="flex justify-between text-xs">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Info className="w-3 h-3" /> Rate
+                          </div>
+                          <div className="font-medium">
+                            1 {fromToken.symbol} = {(parseFloat(outputAmount)/parseFloat(inputAmount) || 0).toFixed(6)} {toToken.symbol}
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Info className="w-3 h-3" /> Price impact
+                          </div>
+                          <div className="font-medium text-green-500">
+                            0.302%
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Settings className="w-3 h-3" /> Max slippage
+                          </div>
+                          <div className="font-medium">
+                            {slippage}%
+                          </div>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Info className="w-3 h-3" /> Receive at least
+                          </div>
+                          <div className="font-medium">
+                            {(parseFloat(outputAmount) * (1 - parseFloat(slippage)/100)).toFixed(6)} {toToken.symbol}
+                          </div>
+                        </div>
+                      </div>
                     )}
-                </div>
-            </Card>
+                    
+                    {/* Min Amount Warning */}
+                    {isAmountTooLow && (
+                       <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-xs font-bold text-red-500">Transaction Failed</p>
+                            <p className="text-[10px] text-red-500/80">Minimum value is $5 USDC. Current value: ${usdValue.toFixed(2)} USDC</p>
+                          </div>
+                       </div>
+                    )}
+                  </div>
+
+                  <div className="p-4 pt-0">
+                    {needsApproval ? (
+                         <Button 
+                            className="w-full h-14 text-lg font-bold rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                            onClick={handleApprove}
+                            disabled={!walletConnected || !inputAmount || isApproving || isAmountTooLow}
+                          >
+                            {isApproving ? (
+                              <div className="flex items-center gap-2"><RefreshCw className="animate-spin w-5 h-5"/> Approving...</div>
+                            ) : `Approve ${fromToken.symbol}`}
+                          </Button>
+                    ) : (
+                        <Button 
+                          className={`w-full h-14 text-lg font-bold rounded-xl shadow-lg ${!walletConnected ? 'bg-secondary text-muted-foreground' : 'bg-primary hover:bg-primary/90 shadow-primary/20'}`}
+                          onClick={handleSwap}
+                          disabled={walletConnected && (!inputAmount || isSwapping || isAmountTooLow)}
+                        >
+                          {isSwapping ? (
+                            <div className="flex items-center gap-2"><RefreshCw className="animate-spin w-5 h-5"/> Swapping...</div>
+                          ) : !walletConnected ? "Connect Wallet" : !inputAmount ? "Enter Amount" : isAmountTooLow ? "Amount too low" : "Swap"}
+                        </Button>
+                    )}
+                    
+                    <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                        <Info className="w-3 h-3" />
+                        <span>No price impact (Testnet)</span>
+                    </div>
+                  </div>
+                </Card>
+            </div>
+
+            {/* Right Column (Chart) */}
+            <div className="lg:col-span-7 order-2 flex flex-col gap-6">
+                <Card className="w-full min-h-[500px] bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden flex flex-col">
+                     <div className="p-6 border-b border-border/50 bg-card/30 flex justify-between items-center">
+                       <div>
+                         <div className="flex items-baseline gap-2">
+                           <h2 className="text-3xl font-bold text-foreground">1.00 {fromToken.symbol}</h2>
+                           <span className="text-sm text-muted-foreground"> = {currentRate.toFixed(4)} {toToken.symbol}</span>
+                         </div>
+                         <div className="flex items-center gap-2 mt-1">
+                           <span className={`text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'} flex items-center gap-1`}>
+                             {isPositive ? <TrendingUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />} 
+                             {isPositive ? '+' : ''}{priceChange} ({priceChangePercent}%)
+                           </span>
+                           <span className="text-xs text-muted-foreground">Past {chartTimeframe}</span>
+                         </div>
+                       </div>
+                       <div className="flex gap-2">
+                         {["1H", "1D", "1W", "1M"].map(period => (
+                           <Button 
+                            key={period} 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setChartTimeframe(period)}
+                            className={`h-8 px-3 rounded-lg text-xs font-semibold ${chartTimeframe === period ? 'bg-secondary text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                           >
+                             {period}
+                           </Button>
+                         ))}
+                       </div>
+                     </div>
+                     
+                     <div className="flex-1 w-full min-h-[350px] p-4 relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={isPositive ? "#22c55e" : "#ef4444"} stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor={isPositive ? "#22c55e" : "#ef4444"} stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <XAxis 
+                              dataKey="time" 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: '#6B7280', fontSize: 12 }}
+                              dy={10}
+                            />
+                            <YAxis 
+                              domain={['dataMin', 'dataMax']} 
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: '#6B7280', fontSize: 12 }}
+                              dx={-10}
+                              tickFormatter={(value) => value.toFixed(4)}
+                            />
+                            <Tooltip 
+                              contentStyle={{ 
+                                backgroundColor: 'rgba(17, 24, 39, 0.9)', 
+                                border: '1px solid rgba(75, 85, 99, 0.4)',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                              }}
+                              itemStyle={{ color: '#fff' }}
+                              labelStyle={{ color: '#9CA3AF', marginBottom: '4px' }}
+                              formatter={(value: number) => [value.toFixed(4), toToken.symbol]}
+                            />
+                            <Area 
+                              type="monotone" 
+                              dataKey="price" 
+                              stroke={isPositive ? "#22c55e" : "#ef4444"} 
+                              strokeWidth={3}
+                              fillOpacity={1} 
+                              fill="url(#colorPrice)" 
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                     </div>
+                </Card>
+            </div>
         </div>
 
-      </main>
+        {/* Trade History (Full Width Below) */}
+        <Card className="w-full bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden">
+            <div className="p-5 border-b border-border/50 bg-card/30 flex items-center justify-between">
+               <h3 className="font-bold text-sm flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> Trade History & Traders</h3>
+            </div>
+            <div className="overflow-x-auto">
+                {trades.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground text-sm">
+                    No recent trades
+                  </div>
+                ) : (
+                <table className="w-full text-sm text-left border-collapse">
+                <thead className="text-xs text-muted-foreground border-b border-border/50">
+                    <tr>
+                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">Trader</th>
+                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">Token Amount</th>
+                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">USDC Amount</th>
+                    <th className="px-6 py-4 font-semibold uppercase tracking-wider">Time</th>
+                    <th className="px-6 py-4 font-semibold uppercase tracking-wider text-right">Tx</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-border/30">
+                    {trades.map((trade, i) => (
+                    <tr key={i} className="hover:bg-secondary/20 transition-colors group">
+                        <td className="px-6 py-4 font-medium text-foreground group-hover:text-primary transition-colors">
+                            <div className="flex items-center gap-2">
+                              {trade.trader.includes('Router') ? 'Router' : trade.trader}
+                              <ExternalLink className="w-3 h-3 text-orange-500 opacity-70 hover:opacity-100 cursor-pointer" />
+                            </div>
+                        </td>
+                        <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1 w-fit ${
+                              trade.type === 'Buy' 
+                                ? 'bg-green-500/10 text-green-500' 
+                                : 'bg-red-500/10 text-red-500'
+                            }`}>
+                              {trade.type === 'Buy' ? <TrendingUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                              {trade.type}
+                            </span>
+                        </td>
+                        <td className="px-6 py-4">
+                            <div className="flex items-center gap-3 text-sm">
+                              {trade.type === 'Buy' ? (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                     <div className="w-5 h-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px]">$</div>
+                                     <span className="font-bold">{trade.usdcAmount}</span>
+                                     <span className="text-muted-foreground text-xs">USDC</span>
+                                  </div>
+                                  <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
+                                  <div className="flex items-center gap-2">
+                                     <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
+                                        {trade.tokenSymbol === 'EURC' ? '€' : '$'}
+                                     </div>
+                                     <span className="font-bold">{trade.tokenAmount}</span>
+                                     <span className="text-muted-foreground text-xs">{trade.tokenSymbol}</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                     <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
+                                        {trade.tokenSymbol === 'EURC' ? '€' : '$'}
+                                     </div>
+                                     <span className="font-bold">{trade.tokenAmount}</span>
+                                     <span className="text-muted-foreground text-xs">{trade.tokenSymbol}</span>
+                                  </div>
+                                  <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
+                                  <div className="flex items-center gap-2">
+                                     <div className="w-5 h-5 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px]">$</div>
+                                     <span className="font-bold">{trade.usdcAmount}</span>
+                                     <span className="text-muted-foreground text-xs">USDC</span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                        </td>
+                        <td className="px-6 py-4 font-bold text-foreground">
+                            {trade.usdcAmount} <span className="text-muted-foreground text-xs font-normal">USDC</span>
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground text-xs">{trade.time}</td>
+                        <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end">
+                                <ExternalLink className="w-4 h-4 text-orange-500 opacity-70 hover:opacity-100 cursor-pointer transition-opacity" />
+                            </div>
+                        </td>
+                    </tr>
+                    ))}
+                </tbody>
+                </table>
+                )}
+            </div>
+        </Card>
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { createWalletClient, custom, parseUnits, encodeFunctionData, formatUnits, encodeAbiParameters } from 'viem';
+import logoImage from '@assets/62c84d4d-8ef8-4dd7-80b4-78a7c37603d8_1765058802117.png';
 // import { arc } from 'viem/chains'; // Removed as we define custom chain
 
 // Define Arc Testnet Custom Chain for Viem
@@ -595,8 +596,8 @@ export default function SwapInterface() {
       {/* Navbar */}
       <nav className="w-full max-w-7xl mx-auto p-4 flex justify-between items-center z-10">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-            <span className="text-primary-foreground font-bold italic text-lg">AS</span>
+          <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden border border-primary/20">
+            <img src={logoImage} alt="Arc Swap Logo" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold tracking-tight leading-none">Arc Swap</span>

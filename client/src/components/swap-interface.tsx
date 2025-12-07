@@ -863,7 +863,7 @@ export default function SwapInterface() {
 
                   <div className="p-4 space-y-1">
                     {/* FROM Input */}
-                    <div className="bg-secondary/30 rounded-[20px] p-4 hover:bg-secondary/40 transition-colors border border-transparent hover:border-border/50 group">
+                    <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
                       <div className="flex justify-between mb-3">
                         <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">From</span>
                         <span className="text-xs font-medium text-muted-foreground">
@@ -899,7 +899,7 @@ export default function SwapInterface() {
                     </div>
 
                     {/* TO Input */}
-                    <div className="bg-secondary/30 rounded-[20px] p-4 hover:bg-secondary/40 transition-colors border border-transparent hover:border-border/50 group">
+                    <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
                       <div className="flex justify-between mb-3">
                         <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">To</span>
                         <span className="text-xs font-medium text-muted-foreground">

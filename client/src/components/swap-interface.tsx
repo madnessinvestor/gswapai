@@ -850,8 +850,8 @@ export default function SwapInterface() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Swap Card (Left) */}
             <div className="lg:col-span-5 order-1">
-                <Card className="w-full bg-card/50 backdrop-blur-md border-border/50 shadow-xl rounded-[24px] overflow-hidden">
-                  <div className="p-5 flex justify-between items-center border-b border-border/50 bg-card/30">
+                <Card className="w-full bg-[#1c1038]/90 backdrop-blur-md border-[#3b1f69]/50 shadow-xl rounded-[24px] overflow-hidden">
+                  <div className="p-5 flex justify-between items-center border-b border-[#3b1f69]/30 bg-[#1c1038]/30">
                     <div className="flex items-center gap-2">
                       <h2 className="font-bold text-lg">Swap</h2>
                       <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold uppercase tracking-wide border border-orange-500/20">

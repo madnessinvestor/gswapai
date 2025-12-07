@@ -941,7 +941,7 @@ export default function SwapInterface() {
                <span className="text-muted-foreground">Slippage tolerance</span>
                <span className="text-primary font-medium">{slippage === "Auto" ? "Auto" : `${slippage}%`}</span>
              </div>
-             <div className="flex gap-2">
+             <div className="flex gap-2 mb-2">
                <Button 
                   variant={slippage === "Auto" ? "secondary" : "outline"} 
                   size="sm" 
@@ -961,6 +961,22 @@ export default function SwapInterface() {
                    {val}%
                  </Button>
                ))}
+             </div>
+             
+             <div className="relative flex items-center">
+                <input 
+                    type="number" 
+                    placeholder="Custom" 
+                    value={slippage !== "Auto" && !["0.1", "0.5", "1.0"].includes(slippage) ? slippage : ""}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "" || parseFloat(val) >= 0) {
+                            setSlippage(val === "" ? "Auto" : val);
+                        }
+                    }}
+                    className={`w-full h-9 rounded-md border bg-[#130b29]/60 px-3 pr-8 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${slippage !== "Auto" && !["0.1", "0.5", "1.0"].includes(slippage) ? "border-primary text-primary ring-1 ring-primary" : "border-[#3b1f69]/50 text-foreground"}`}
+                />
+                <span className="absolute right-3 text-xs text-muted-foreground">%</span>
              </div>
            </div>
         </div>

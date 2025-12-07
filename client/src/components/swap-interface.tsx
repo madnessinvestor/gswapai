@@ -260,7 +260,19 @@ const randomHex = (length: number) => {
   return result;
 };
 
-import { Slider } from "@/components/ui/slider";
+// Helper for timestamp formatting
+const formatTimeAgo = (timestamp: number) => {
+    const now = Date.now();
+    const diffMs = now - timestamp;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+};
 
 export default function SwapInterface() {
   const { toast } = useToast();
@@ -335,6 +347,13 @@ export default function SwapInterface() {
       }
   };
 
+  // Force re-render every minute to update relative times
+  const [, setTick] = useState(0);
+  useEffect(() => {
+      const interval = setInterval(() => setTick(t => t + 1), 60000);
+      return () => clearInterval(interval);
+  }, []);
+
   // Load My Trades from LocalStorage and generate mock history on account change
   useEffect(() => {
     if (!account) {
@@ -370,11 +389,16 @@ export default function SwapInterface() {
         const hashSeed = Math.floor(seededRandom() * 1000000).toString(16);
         const hash = `0x${hashSeed.padStart(64, '0')}`; // Simplified hash generation
         
-        // Time: random time between 1h and 7 days ago
-        const timeAgoMins = Math.floor(seededRandom() * 10000) + 60; 
+        // Time: random time between 1m and 7 days ago
+        // Allow minutes (removed the +60 restriction)
+        const timeAgoMins = Math.floor(seededRandom() * 10000) + 1; 
+        const timestamp = Date.now() - (timeAgoMins * 60000);
+        
         const timeDisplay = timeAgoMins > 1440 
             ? `${Math.floor(timeAgoMins / 1440)}d ago` 
-            : `${Math.floor(timeAgoMins / 60)}h ago`;
+            : timeAgoMins > 60 
+                ? `${Math.floor(timeAgoMins / 60)}h ago`
+                : `${timeAgoMins}m ago`;
 
         mockHistory.push({
             trader: `${account.slice(0,6)}...${account.slice(-4)}`,
@@ -384,6 +408,7 @@ export default function SwapInterface() {
             tokenSymbol: 'EURC',
             usdcAmount: usdcAmt,
             time: timeDisplay,
+            timestamp: timestamp, // Store timestamp for future refreshes
             hash: `${hash.slice(0,6)}...${hash.slice(-4)}`,
             fullHash: hash
         });
@@ -669,6 +694,7 @@ export default function SwapInterface() {
             tokenSymbol: 'EURC', // Simplified to assume EURC/USDC pair primarily
             usdcAmount: usdcAmt, 
             time: "Just now",
+            timestamp: Date.now(), // Add timestamp for dynamic update
             hash: `0x${hashHex.slice(0, 4)}...${hashHex.slice(-4)}`,
             fullHash: fullHash
         };
@@ -778,6 +804,7 @@ export default function SwapInterface() {
                 tokenSymbol: isBuy ? toToken.symbol : fromToken.symbol,
                 usdcAmount: isBuy ? parseFloat(inputAmount).toFixed(4) : parseFloat(outputAmount).toFixed(4),
                 time: "Just now",
+                timestamp: Date.now(), // Add timestamp
                 hash: `${hash.slice(0,6)}...${hash.slice(-4)}`,
                 fullHash: hash
               };
@@ -1403,7 +1430,9 @@ export default function SwapInterface() {
                             <td className="px-6 py-4 font-bold text-foreground">
                                 {trade.usdcAmount} <span className="text-muted-foreground text-xs font-normal">USDC</span>
                             </td>
-                            <td className="px-6 py-4 text-muted-foreground text-xs font-medium">{trade.time}</td>
+                            <td className="px-6 py-4 text-muted-foreground text-xs font-medium">
+                                {(trade as any).timestamp ? formatTimeAgo((trade as any).timestamp) : trade.time}
+                            </td>
                             <td className="px-6 py-4 text-right">
                                 <div className="flex justify-end">
                                     {showMyTrades ? (

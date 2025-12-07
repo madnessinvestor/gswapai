@@ -76,7 +76,7 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
       height: 400,
       timeScale: {
         timeVisible: true,
-        secondsVisible: timeframe === '5s' || timeframe === '15m' || timeframe === '1H',
+        secondsVisible: true,
         borderColor: '#3b1f69',
         tickMarkFormatter: (time: number, tickMarkType: any, locale: any) => {
             const date = new Date(time * 1000);
@@ -142,6 +142,7 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
     // and then correct/append live data.
     const initialData = generateInitialData(7.56, timeframe);
     series.setData(initialData);
+    chart.timeScale().fitContent();
 
     async function tick() {
       const price = await getPrice();

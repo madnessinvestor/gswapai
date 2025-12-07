@@ -282,15 +282,7 @@ export default function SwapInterface() {
   const [currentPage, setCurrentPage] = useState(1);
   const [inputPercentage, setInputPercentage] = useState(0);
   const itemsPerPage = 20;
-  // const [userVolume, setUserVolume] = useState(0); // Removed in favor of derived value
   const [globalVolume, setGlobalVolume] = useState(4245890.00); // Simulated start volume
-
-  // Calculate User Volume based on My Trades (Mock + Real)
-  const userVolume = useMemo(() => {
-      return myTrades.reduce((total, trade) => {
-          return total + (parseFloat(trade.usdcAmount) || 0);
-      }, 0);
-  }, [myTrades]);
 
   // Simulate Global Volume Ticker
   useEffect(() => {
@@ -1279,14 +1271,6 @@ export default function SwapInterface() {
                                 <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">24h Vol (Global)</span>
                                 <span className="text-sm font-bold text-foreground">
                                     ${globalVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
-                            </div>
-
-                            {/* User Volume */}
-                            <div className="bg-[#1c1038]/80 backdrop-blur-sm border border-[#3b1f69]/50 rounded-lg px-3 py-1.5 flex flex-col items-end shadow-lg">
-                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">My Volume</span>
-                                <span className="text-sm font-bold text-foreground text-primary">
-                                    ${userVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                         </div>

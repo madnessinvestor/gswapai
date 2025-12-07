@@ -282,6 +282,15 @@ export default function SwapInterface() {
   const [currentPage, setCurrentPage] = useState(1);
   const [inputPercentage, setInputPercentage] = useState(0);
   const itemsPerPage = 20;
+  const [siteVolume, setSiteVolume] = useState(0);
+
+  // Load saved volume from localStorage
+  useEffect(() => {
+      const savedVolume = localStorage.getItem('arc_site_volume');
+      if (savedVolume) {
+          setSiteVolume(parseFloat(savedVolume));
+      }
+  }, []);
 
   // Calculate percentage when input changes
   useEffect(() => {
@@ -776,6 +785,14 @@ export default function SwapInterface() {
               // Add to global trades (limited to 40)
               setTrades(prev => [newTrade, ...prev].slice(0, 40));
               
+              // Update Site Volume
+              const tradeValue = parseFloat(newTrade.usdcAmount);
+              setSiteVolume(prev => {
+                  const newVol = prev + tradeValue;
+                  localStorage.setItem('arc_site_volume', newVol.toString());
+                  return newVol;
+              });
+
               // Add to my trades (unlimited for session, filtered by account view)
               setMyTrades(prev => {
                 const updated = [newTrade, ...prev];
@@ -1256,8 +1273,10 @@ export default function SwapInterface() {
                         {/* Volume Indicator Overlay */}
                         <div className="absolute bottom-4 right-14 bg-[#1c1038]/80 backdrop-blur-sm border border-[#3b1f69]/50 rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg z-10">
                             <div className="flex flex-col items-end">
-                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Volume (24h)</span>
-                                <span className="text-sm font-bold text-foreground">$1,245,890.00</span>
+                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Volume (Site)</span>
+                                <span className="text-sm font-bold text-foreground">
+                                    ${siteVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
                             </div>
                         </div>
                      </div>

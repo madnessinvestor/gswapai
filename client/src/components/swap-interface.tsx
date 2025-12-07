@@ -12,7 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, ReferenceLine } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { createWalletClient, custom, parseUnits, encodeFunctionData, formatUnits, encodeAbiParameters } from 'viem';
 import logoImage from '@assets/d0bbfa09-77e9-4527-a95a-3ec275fefad8_1765059425973.png';
@@ -1210,6 +1210,40 @@ export default function SwapInterface() {
                               strokeWidth={2}
                               fillOpacity={1} 
                               fill="url(#colorPrice)" 
+                            />
+                            <ReferenceLine 
+                                y={chartData[0]?.price} 
+                                stroke={isPositive ? "#22c55e" : "#f59e0b"} 
+                                strokeDasharray="3 3" 
+                                opacity={0.6}
+                                label={({ viewBox }) => {
+                                    // Custom label with background box
+                                    const y = viewBox.y;
+                                    const x = viewBox.width; // Far right
+                                    const color = isPositive ? "#22c55e" : "#f59e0b";
+                                    return (
+                                        <g>
+                                            <rect 
+                                                x={x - 2} 
+                                                y={y - 10} 
+                                                width={48} 
+                                                height={20} 
+                                                fill={color} 
+                                                rx={2}
+                                            />
+                                            <text 
+                                                x={x + 22} 
+                                                y={y + 4} 
+                                                textAnchor="middle" 
+                                                fill="#fff" 
+                                                fontSize={10} 
+                                                fontWeight="bold"
+                                            >
+                                                {chartData[0]?.price.toFixed(4)}
+                                            </text>
+                                        </g>
+                                    );
+                                }}
                             />
                           </AreaChart>
                         </ResponsiveContainer>

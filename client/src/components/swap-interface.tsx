@@ -476,25 +476,6 @@ export default function SwapInterface() {
   const isPositive = priceChange >= 0;
 
   // Validation: Minimum 5 USDC value
-  const usdValue = fromToken.symbol === 'USDC' 
-    ? parseFloat(inputAmount || "0") 
-    : parseFloat(inputAmount || "0") * exchangeRate; // Use dynamic rate (approximate if inverted)
-  // Fix: If inverted, exchangeRate is USDC/EURC (~0.13), so EURC * Rate = USDC? No.
-  // If from=USDC, exchangeRate is ~0.13 EURC per USDC.
-  // If from=EURC, exchangeRate is ~7.56 USDC per EURC.
-  
-  // We need value in USDC specifically for the $5 check.
-  // If from=USDC, inputAmount is USDC.
-  // If from=EURC, inputAmount * Rate (7.56) = USDC Value.
-  
-  // The 'exchangeRate' state now holds the "From -> To" rate.
-  // So if from=EURC, rate=7.56. Value = input * 7.56. Correct.
-  // If from=USDC, rate=0.13. Value = input. Correct.
-  
-  // Wait, the logic below was:
-  // const usdValue = fromToken.symbol === 'USDC' ? input : input * rate?
-  // Let's refine:
-  
   const getUsdcValue = () => {
       if (!inputAmount) return 0;
       const val = parseFloat(inputAmount);

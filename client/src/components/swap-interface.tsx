@@ -1027,6 +1027,37 @@ export default function SwapInterface() {
           return;
       }
 
+      // Final Balance Check
+      try {
+        const encodedBalance = encodeFunctionData({
+            abi: ERC20_ABI,
+            functionName: 'balanceOf',
+            args: [account]
+        });
+        const balanceResult = await (client as any).request({
+            method: 'eth_call',
+            params: [{
+                to: fromToken.address as `0x${string}`,
+                data: encodedBalance
+            }, 'latest']
+        });
+        const currentBalance = BigInt(balanceResult);
+        const amountIn = parseUnits(inputAmount, fromToken.decimals);
+        
+        if (currentBalance < amountIn) {
+             toast({ 
+              title: "Insufficient Balance", 
+              description: `You have ${formatUnits(currentBalance, fromToken.decimals)} ${fromToken.symbol} but trying to swap ${inputAmount}.`,
+              variant: "destructive"
+          });
+          // Update UI balance
+          fetchBalances(account);
+          return;
+        }
+      } catch (e) {
+          console.warn("Pre-swap balance check failed", e);
+      }
+
       setIsSwapping(true);
       try {
           const amountIn = parseUnits(inputAmount, fromToken.decimals);

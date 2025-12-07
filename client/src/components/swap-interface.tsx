@@ -586,13 +586,14 @@ export default function SwapInterface() {
     if (!client) return;
 
     try {
+        const spender = fromToken.symbol === "USDC" ? POOL_ADDRESS : ROUTER_ADDRESS;
         const encodedAllowance = encodeFunctionData({
             abi: ERC20_ABI,
             functionName: 'allowance',
-            args: [account, POOL_ADDRESS]
+            args: [account, spender]
         });
 
-        console.log(`Checking allowance for ${fromToken.symbol} (${fromToken.address})`);
+        console.log(`Checking allowance for ${fromToken.symbol} (${fromToken.address}) spender: ${spender}`);
         
         const allowanceResult = await (client as any).request({
             method: 'eth_call',
@@ -749,11 +750,12 @@ export default function SwapInterface() {
       
       setIsApproving(true);
       try {
+          const spender = fromToken.symbol === "USDC" ? POOL_ADDRESS : ROUTER_ADDRESS;
           const amountToApprove = parseUnits(inputAmount, fromToken.decimals);
           const data = encodeFunctionData({
               abi: ERC20_ABI,
               functionName: 'approve',
-              args: [POOL_ADDRESS, amountToApprove]
+              args: [spender, amountToApprove]
           });
           
           const hash = await client.sendTransaction({
@@ -788,33 +790,50 @@ export default function SwapInterface() {
           const amountOutMinVal = parseFloat(outputAmount) * (1 - parseFloat(slippage)/100);
           const amountOutMin = parseUnits(amountOutMinVal.toFixed(toToken.decimals), toToken.decimals);
           
-          // Use POOL_ADDRESS for the swap, not Router
-          const targetAddress = POOL_ADDRESS;
-
-          // Determine correct function selector based on swap direction
-          // USDC -> EURC: 0x84b065d3
-          // EURC -> USDC: 0x99d96739
-          const selector = fromToken.symbol === "USDC" ? "0x84b065d3" : "0x99d96739";
+          let targetAddress: string;
+          let data: string;
           
-          const encodedParams = encodeAbiParameters(
-            [
-              { type: 'uint256' },
-              { type: 'uint256' },
-              { type: 'address' }
-            ],
-            [amountIn, amountOutMin, account as `0x${string}`]
-          );
-          
-          const data = selector + encodedParams.slice(2); // Remove 0x from params to concatenate
+          if (fromToken.symbol === "USDC") {
+              // USDC -> EURC: Use Pool Direct Interaction (Optimized)
+              targetAddress = POOL_ADDRESS;
+              const selector = "0x84b065d3";
+              
+              const encodedParams = encodeAbiParameters(
+                [
+                  { type: 'uint256' },
+                  { type: 'uint256' },
+                  { type: 'address' }
+                ],
+                [amountIn, amountOutMin, account as `0x${string}`]
+              );
+              
+              data = selector + encodedParams.slice(2);
+          } else {
+              // EURC -> USDC: Use Router Standard Swap (Legacy/Stable)
+              targetAddress = ROUTER_ADDRESS;
+              const path = [fromToken.address, toToken.address];
+              const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 20); // 20 mins
+              
+              data = encodeFunctionData({
+                  abi: ROUTER_ABI,
+                  functionName: 'swapExactTokensForTokens',
+                  args: [
+                      amountIn,
+                      amountOutMin,
+                      path,
+                      account,
+                      deadline
+                  ]
+              });
+          }
 
-          console.log("Sending Transaction to Pool:", targetAddress);
+          console.log("Sending Transaction to:", targetAddress);
           console.log("Direction:", fromToken.symbol, "->", toToken.symbol);
-          console.log("Selector:", selector);
           console.log("Data:", data);
 
           const hash = await client.sendTransaction({
               account: account as `0x${string}`,
-              to: targetAddress,
+              to: targetAddress as `0x${string}`,
               data: data as `0x${string}`,
               value: BigInt(0)
           });

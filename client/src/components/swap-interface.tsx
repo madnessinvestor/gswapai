@@ -271,13 +271,20 @@ const randomHex = (length: number) => {
 
 // Helper for timestamp formatting
 const formatTimeAgo = (timestamp: number) => {
+    if (!timestamp) return "Just now";
+    
     const now = Date.now();
     const diffMs = now - timestamp;
+    
+    // Handle negative diffs (future timestamps from slight clock skew)
+    if (diffMs < 0) return "Just now";
+    
+    const diffSecs = Math.floor(diffMs / 1000);
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "Just now";
+    if (diffSecs < 60) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
@@ -389,7 +396,20 @@ export default function SwapInterface() {
   const [slippage, setSlippage] = useState("0.5");
   const [balances, setBalances] = useState({ USDC: "0.00", EURC: "0.00" });
   const [needsApproval, setNeedsApproval] = useState(false);
-  const [trades, setTrades] = useState(INITIAL_TRADES);
+  
+  // Initialize trades with dynamic timestamps relative to now
+  const [trades, setTrades] = useState(() => {
+      const now = Date.now();
+      return INITIAL_TRADES.map(t => {
+          // Parse "Xm ago" from initial data to create a relative timestamp
+          const mins = parseInt(t.time);
+          return {
+              ...t,
+              timestamp: now - (mins * 60000)
+          };
+      });
+  });
+
   const [myTrades, setMyTrades] = useState<any[]>([]); // Store all user trades
   const [chartTimeframe, setChartTimeframe] = useState("1D");
   const [showMyTrades, setShowMyTrades] = useState(false);
@@ -462,7 +482,7 @@ export default function SwapInterface() {
   // Force re-render every minute to update relative times
   const [, setTick] = useState(0);
   useEffect(() => {
-      const interval = setInterval(() => setTick(t => t + 1), 60000);
+      const interval = setInterval(() => setTick(t => t + 1), 10000);
       return () => clearInterval(interval);
   }, []);
 

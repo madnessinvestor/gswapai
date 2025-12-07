@@ -14,7 +14,14 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<any>(null); // To store series reference
+  
+  // Track previous symbols to detect pair changes
+  const prevFromSymbol = useRef(fromSymbol);
+  const prevToSymbol = useRef(toSymbol);
+
   // Initialize local state with prop if available to prevent jump
+  // BUT only if the symbols match what we expect (handled in useEffect mostly, but here for initial render)
+  // We can't easily check refs during init, so we rely on useEffect to correct it if needed.
   const [currentPrice, setCurrentPrice] = useState<string | null>(
       currentRate ? (currentRate < 1 ? currentRate.toFixed(6) : currentRate.toFixed(4)) : null
   );
@@ -198,12 +205,18 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
     }
 
     // Initial Data Load
-    // We'll use a base price around 7.56 (or 1/7.56) to start generating history
-    // Use currentRate if available as the base anchor
-    const basePrice = currentRate || (fromSymbol === "USDC" ? (1/7.56) : 7.56);
+    // Check if pair changed
+    const hasPairChanged = prevFromSymbol.current !== fromSymbol || prevToSymbol.current !== toSymbol;
     
-    // Pass currentRate as the target end price to ensure continuity
-    const initialData = generateInitialData(basePrice, timeframe, currentRate);
+    // Use currentRate ONLY if pair hasn't changed (otherwise it's stale from previous pair)
+    const effectiveCurrentRate = hasPairChanged ? null : currentRate;
+
+    // We'll use a base price around 7.56 (or 1/7.56) to start generating history
+    // Use effectiveCurrentRate if available as the base anchor
+    const basePrice = effectiveCurrentRate || (fromSymbol === "USDC" ? (1/7.56) : 7.56);
+    
+    // Pass effectiveCurrentRate as the target end price to ensure continuity
+    const initialData = generateInitialData(basePrice, timeframe, effectiveCurrentRate);
     
     series.setData(initialData);
     chart.timeScale().fitContent();
@@ -257,11 +270,15 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
     }
 
     // Initial tick
-    // If we already have a currentRate (e.g. from switching tabs), skip the initial tick 
-    // to prevent price jumping. The interval will pick it up in 15s.
-    if (!currentRate) {
+    // If we already have a VALID currentRate (same pair), skip initial tick to prevent jump.
+    // If pair changed, we MUST tick to get new price.
+    if (hasPairChanged || !effectiveCurrentRate) {
         tick();
     }
+
+    // Update refs
+    prevFromSymbol.current = fromSymbol;
+    prevToSymbol.current = toSymbol;
 
     // Update interval: 15s to reduce volatility and transaction failures
     const interval = setInterval(tick, 15000);

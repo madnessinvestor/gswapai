@@ -458,6 +458,33 @@ export default function SwapInterface() {
   const [activeNetwork, setActiveNetwork] = useState<'arc' | 'sepolia'>('arc');
   const currentTokens = activeNetwork === 'arc' ? ARC_TOKENS : SEPOLIA_TOKENS;
 
+  // Network Switch Helper
+  const handleNetworkSwitch = async (network: 'arc' | 'sepolia') => {
+      const client = getWalletClient();
+      if (client) {
+          try {
+              if (network === 'arc') {
+                   try {
+                      await client.switchChain({ id: arcTestnet.id });
+                  } catch (e) {
+                      await client.addChain({ chain: arcTestnet });
+                  }
+              } else {
+                  // Sepolia
+                  try {
+                      await client.switchChain({ id: sepolia.id });
+                  } catch (e) {
+                       await client.switchChain({ id: sepolia.id });
+                  }
+              }
+          } catch (e) {
+              console.error("Failed to switch network", e);
+              toast({ title: "Network Switch Failed", description: "Please switch network in your wallet manually.", variant: "destructive" });
+          }
+      }
+      setActiveNetwork(network);
+  };
+
   const [inputAmount, setInputAmount] = useState("");
   const [outputAmount, setOutputAmount] = useState("");
   const [fromToken, setFromToken] = useState(currentTokens[0]); 
@@ -1480,14 +1507,14 @@ export default function SwapInterface() {
                     </DialogHeader>
                     <div className="grid gap-2 py-2">
                         <DialogClose asChild>
-                            <Button variant="ghost" className="w-full justify-start gap-3 h-12" onClick={() => setActiveNetwork('arc')}>
+                            <Button variant="ghost" className="w-full justify-start gap-3 h-12" onClick={() => handleNetworkSwitch('arc')}>
                                 <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center"><img src={arcSymbol} className="w-full h-full object-contain"/></div>
                                 <span className="font-semibold">Arc Testnet</span>
                                 {activeNetwork === 'arc' && <div className="ml-auto w-2 h-2 rounded-full bg-green-500"/>}
                             </Button>
                         </DialogClose>
                         <DialogClose asChild>
-                            <Button variant="ghost" className="w-full justify-start gap-3 h-12" onClick={() => setActiveNetwork('sepolia')}>
+                            <Button variant="ghost" className="w-full justify-start gap-3 h-12" onClick={() => handleNetworkSwitch('sepolia')}>
                                 <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center"><img src={ethSepoliaSymbol} className="w-full h-full object-contain"/></div>
                                 <span className="font-semibold">Ethereum Sepolia</span>
                                 {activeNetwork === 'sepolia' && <div className="ml-auto w-2 h-2 rounded-full bg-green-500"/>}
@@ -1733,7 +1760,15 @@ export default function SwapInterface() {
                         <div className="relative h-2 z-10 flex justify-center items-center">
                             <div 
                                 className="bg-background p-1.5 rounded-full shadow-md border border-border/50 cursor-pointer hover:rotate-180 transition-all duration-500 hover:scale-110"
-                                onClick={() => setBridgeDirection(prev => prev === 'sepolia-to-arc' ? 'arc-to-sepolia' : 'sepolia-to-arc')}
+                                onClick={() => {
+                                    const newDir = bridgeDirection === 'sepolia-to-arc' ? 'arc-to-sepolia' : 'sepolia-to-arc';
+                                    setBridgeDirection(newDir);
+                                    if (newDir === 'sepolia-to-arc') {
+                                        handleNetworkSwitch('sepolia');
+                                    } else {
+                                        handleNetworkSwitch('arc');
+                                    }
+                                }}
                             >
                                 <ArrowDown className="w-4 h-4 text-primary" />
                             </div>

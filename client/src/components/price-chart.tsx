@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createChart, ColorType, IChartApi } from "lightweight-charts";
+import { createChart, ColorType, IChartApi, AreaSeries, Time } from "lightweight-charts";
 import { ethers } from "ethers";
 
 export default function PriceChart() {
@@ -34,7 +34,8 @@ export default function PriceChart() {
     chartRef.current = chart;
 
     // Use Area Series for the "Stepped Line" look (approximated with line)
-    const series = (chart as any).addAreaSeries({
+    // V5 Syntax: chart.addSeries(AreaSeries, options)
+    const series = chart.addSeries(AreaSeries, {
       lineColor: '#f97316', // Orange-500 to match image
       topColor: 'rgba(249, 115, 22, 0.2)', 
       bottomColor: 'rgba(249, 115, 22, 0.0)',
@@ -81,7 +82,7 @@ export default function PriceChart() {
     for (let i = 60; i > 0; i--) {
         basePrice += (Math.random() - 0.5) * 0.02;
         data.push({
-            time: now - (i * 60),
+            time: (now - (i * 60)) as Time,
             value: basePrice
         });
     }
@@ -93,7 +94,7 @@ export default function PriceChart() {
 
       setCurrentPrice(price.toFixed(4));
 
-      const timestamp = Math.floor(Date.now() / 1000);
+      const timestamp = Math.floor(Date.now() / 1000) as Time;
       series.update({ time: timestamp, value: price });
     }
 

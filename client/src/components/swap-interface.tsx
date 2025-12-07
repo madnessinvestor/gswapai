@@ -981,10 +981,22 @@ export default function SwapInterface() {
                 }
             });
             
-            (window as any).ethereum.on('chainChanged', () => {
-                // Do not reload, just let the state sync
-                // window.location.reload(); 
-                fetchBalances(account);
+            (window as any).ethereum.on('chainChanged', (chainId: string) => {
+                // Handle chain change without reloading
+                // Map chainId to network
+                const id = parseInt(chainId, 16);
+                if (id === sepolia.id) {
+                    setActiveNetwork('sepolia');
+                    // fetchBalances called via useEffect on activeNetwork change, 
+                    // but we need to ensure account is fresh too
+                } else if (id === arcTestnet.id) {
+                    setActiveNetwork('arc');
+                }
+                
+                // If we are connected, refresh everything
+                if (account) {
+                    fetchBalances(account);
+                }
             });
         }
 
@@ -1030,9 +1042,17 @@ export default function SwapInterface() {
                             disconnectWallet();
                         }
                     });
-                     (window as any).ethereum.on('chainChanged', () => {
-                        // window.location.reload();
-                        fetchBalances(address);
+                     (window as any).ethereum.on('chainChanged', (chainId: string) => {
+                        const id = parseInt(chainId, 16);
+                        if (id === sepolia.id) {
+                            setActiveNetwork('sepolia');
+                        } else if (id === arcTestnet.id) {
+                            setActiveNetwork('arc');
+                        }
+                        
+                        if (address) {
+                            fetchBalances(address);
+                        }
                     });
                 }
 

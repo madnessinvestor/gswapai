@@ -790,6 +790,9 @@ export default function SwapInterface() {
       setIsSwapping(true);
       try {
           const amountIn = parseUnits(inputAmount, fromToken.decimals);
+          // Calculate slippage: If "Auto", use 0.5% as default, otherwise parse the value
+          const slippageVal = slippage === "Auto" ? 0.5 : parseFloat(slippage);
+          
           // Use 0 for amountOutMin to prevent slippage errors since we rely on mock rates
           // This ensures the transaction succeeds even if our frontend rate differs from the pool
           const amountOutMin = BigInt(0);
@@ -936,9 +939,17 @@ export default function SwapInterface() {
            <div className="space-y-2">
              <div className="flex justify-between text-sm">
                <span className="text-muted-foreground">Slippage tolerance</span>
-               <span className="text-primary font-medium">{slippage}%</span>
+               <span className="text-primary font-medium">{slippage === "Auto" ? "Auto" : `${slippage}%`}</span>
              </div>
              <div className="flex gap-2">
+               <Button 
+                  variant={slippage === "Auto" ? "secondary" : "outline"} 
+                  size="sm" 
+                  className={`flex-1 ${slippage === "Auto" ? "bg-primary/20 text-primary border-primary/20" : "bg-[#130b29]/60 border-[#3b1f69]/50 text-muted-foreground hover:text-foreground hover:bg-[#3b1f69]/50"}`}
+                  onClick={() => setSlippage("Auto")}
+                 >
+                   Auto
+               </Button>
                {["0.1", "0.5", "1.0"].map((val) => (
                  <Button 
                   key={val}

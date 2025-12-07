@@ -257,7 +257,11 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
     }
 
     // Initial tick
-    tick();
+    // If we already have a currentRate (e.g. from switching tabs), skip the initial tick 
+    // to prevent price jumping. The interval will pick it up in 15s.
+    if (!currentRate) {
+        tick();
+    }
 
     // Update interval: 15s to reduce volatility and transaction failures
     const interval = setInterval(tick, 15000);

@@ -280,8 +280,8 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
     prevFromSymbol.current = fromSymbol;
     prevToSymbol.current = toSymbol;
 
-    // Update interval: 15s to reduce volatility and transaction failures
-    const interval = setInterval(tick, 15000);
+    // Update interval: 10s to match user request for "RealTime" updates
+    const interval = setInterval(tick, 10000);
 
     // Handle resize
     const handleResize = () => {

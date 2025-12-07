@@ -303,7 +303,7 @@ export default function SwapInterface() {
   const [currentPage, setCurrentPage] = useState(1);
   const [inputPercentage, setInputPercentage] = useState(0);
   const itemsPerPage = 20;
-  const [globalVolume, setGlobalVolume] = useState(4245890.00); // Simulated start volume
+  const [globalVolume, setGlobalVolume] = useState(43400.00); // Simulated start volume to match $43.40K example
   
   // State for dynamic exchange rate
   // Default should be correct for the initial pair USDC -> EURC
@@ -317,8 +317,9 @@ export default function SwapInterface() {
   // Simulate Global Volume Ticker
   useEffect(() => {
     const interval = setInterval(() => {
-        setGlobalVolume(prev => prev + (Math.random() * 500));
-    }, 3000);
+        // Add small random increment every 10s
+        setGlobalVolume(prev => prev + (Math.random() * 50));
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -1225,8 +1226,15 @@ export default function SwapInterface() {
                             1 {fromToken.symbol} ≈ {currentRate.toFixed(4)} {toToken.symbol}
                          </div>
                          <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                            <span>24h Vol: <span className="text-foreground font-medium">${(globalVolume/1000).toFixed(2)}K</span></span>
-                            <span className="text-xs opacity-60">(updates live)</span>
+                            <span className="flex items-center gap-1.5 text-emerald-400 font-medium text-xs uppercase tracking-wider">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                RealTime
+                            </span>
+                            <span className="text-muted-foreground/30">|</span>
+                            <span className="font-medium text-muted-foreground">24h Vol: <span className="text-foreground font-semibold tracking-tight">${(globalVolume/1000).toFixed(2)}K</span></span>
                          </div>
                        </div>
                        <div className="flex bg-[#130b29]/60 rounded-lg p-1 border border-[#3b1f69]/50">

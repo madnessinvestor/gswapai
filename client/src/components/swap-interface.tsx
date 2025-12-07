@@ -63,11 +63,13 @@ const sepolia = {
 
 const ROUTER_ADDRESS = "0x284C5Afc100ad14a458255075324fA0A9dfd66b1";
 const POOL_ADDRESS = "0x18eAE2e870Ec4Bc31a41B12773c4F5c40Bf19aCD";
+const SEPOLIA_ROUTER_ADDRESS = "0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008"; // Uniswap V2 Router on Sepolia
 
 const USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
+const SEPOLIA_USDC_ADDRESS = "0xf08A50178dfcDe18524640EA6618a1f965821715";
 
 // Token Definitions
-const TOKENS = [
+const ARC_TOKENS = [
   { 
     symbol: "USDC", 
     name: "USD Coin", 
@@ -85,6 +87,26 @@ const TOKENS = [
     isNative: false
   },
 ];
+
+const SEPOLIA_TOKENS = [
+  {
+    symbol: "ETH",
+    name: "Ether",
+    icon: "Ξ",
+    address: "0x0000000000000000000000000000000000000000", // Native
+    decimals: 18,
+    isNative: true
+  },
+  {
+    symbol: "USDC",
+    name: "USD Coin",
+    icon: "$",
+    address: SEPOLIA_USDC_ADDRESS,
+    decimals: 6,
+    isNative: false
+  }
+];
+
 
 // ABIs
 const ERC20_ABI = [
@@ -433,20 +455,31 @@ const formatTimeAgo = (timestamp: number) => {
 
 export default function SwapInterface() {
   const { toast } = useToast();
+  const [activeNetwork, setActiveNetwork] = useState<'arc' | 'sepolia'>('arc');
+  const currentTokens = activeNetwork === 'arc' ? ARC_TOKENS : SEPOLIA_TOKENS;
+
   const [inputAmount, setInputAmount] = useState("");
   const [outputAmount, setOutputAmount] = useState("");
-  const [fromToken, setFromToken] = useState(TOKENS[0]); // USDC
-  const [toToken, setToToken] = useState(TOKENS[1]); // EURC
+  const [fromToken, setFromToken] = useState(currentTokens[0]); 
+  const [toToken, setToToken] = useState(currentTokens[1]);
   const [isSwapping, setIsSwapping] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [walletConnected, setWalletConnected] = useState(false);
   const [account, setAccount] = useState("");
   const [slippage, setSlippage] = useState("0.5");
-  const [balances, setBalances] = useState({ USDC: "0.00", EURC: "0.00" });
+  const [balances, setBalances] = useState({ USDC: "0.00", EURC: "0.00", ETH: "0.00" });
   const [needsApproval, setNeedsApproval] = useState(false);
   const [mode, setMode] = useState<'swap' | 'bridge'>('swap');
   const [bridgeDirection, setBridgeDirection] = useState<'sepolia-to-arc' | 'arc-to-sepolia'>('sepolia-to-arc');
   
+  // Effect to update tokens when network changes
+  useEffect(() => {
+      setFromToken(currentTokens[0]);
+      setToToken(currentTokens[1]);
+      setInputAmount("");
+      setOutputAmount("");
+  }, [activeNetwork]);
+
   // Initialize trades with 100 random trades
   const [trades, setTrades] = useState(() => {
       const now = Date.now();
@@ -713,64 +746,64 @@ export default function SwapInterface() {
 
   // Fetch Balances
   const fetchBalances = async (userAddress: string) => {
+    if (!userAddress) return;
     const client = getWalletClient();
     if (!client) return;
 
     try {
-      // 1. Fetch Native Balance (Gas) - usually 18 decimals
-      let usdcGasFormatted = "0.00";
+      // 1. Fetch Native Gas Balance
+      let nativeFormatted = "0.00";
       try {
         const nativeBal = await (client as any).request({
           method: 'eth_getBalance',
           params: [userAddress as `0x${string}`, 'latest']
         });
-        usdcGasFormatted = formatUnits(BigInt(nativeBal), 18);
+        nativeFormatted = formatUnits(BigInt(nativeBal), 18);
       } catch (e) {
         console.warn("Failed to fetch Native Gas balance", e);
       }
 
-      // 2. Fetch USDC ERC20 Balance - 6 decimals
-      let usdcTokenFormatted = "0.00";
-      try {
-        const encodedBalanceOfUSDC = encodeFunctionData({
-            abi: ERC20_ABI,
-            functionName: 'balanceOf',
-            args: [userAddress]
-        });
-         const tokenBalUSDC = await (client as any).request({
-          method: 'eth_call',
-          params: [{
-            to: USDC_ADDRESS,
-            data: encodedBalanceOfUSDC
-          }, 'latest']
-        });
-        usdcTokenFormatted = formatUnits(BigInt(tokenBalUSDC), 6);
-      } catch (e) {
-         console.warn("Failed to fetch USDC ERC20 balance", e);
+      // Helper to fetch ERC20
+      const fetchERC20 = async (address: string, decimals: number) => {
+          try {
+            const encoded = encodeFunctionData({
+                abi: ERC20_ABI,
+                functionName: 'balanceOf',
+                args: [userAddress]
+            });
+            const bal = await (client as any).request({
+              method: 'eth_call',
+              params: [{ to: address as `0x${string}`, data: encoded }, 'latest']
+            });
+            return formatUnits(BigInt(bal), decimals);
+          } catch (e) {
+              return "0.00";
+          }
+      };
+
+      // Identify tokens from current list
+      const usdcToken = currentTokens.find(t => t.symbol === 'USDC');
+      const eurcToken = currentTokens.find(t => t.symbol === 'EURC');
+      const ethToken = currentTokens.find(t => t.symbol === 'ETH');
+
+      let usdcBal = "0.00";
+      if (usdcToken) {
+          usdcBal = usdcToken.isNative ? nativeFormatted : await fetchERC20(usdcToken.address, usdcToken.decimals);
       }
 
-      // 3. Fetch EURC ERC20 Balance - 6 decimals
-      let eurcFormatted = "0.00";
-      try {
-        const encodedBalanceOfEURC = encodeFunctionData({
-            abi: ERC20_ABI,
-            functionName: 'balanceOf',
-            args: [userAddress]
-        });
-        const tokenBalEURC = await (client as any).request({
-          method: 'eth_call',
-          params: [{
-            to: TOKENS[1].address as `0x${string}`,
-            data: encodedBalanceOfEURC
-          }, 'latest']
-        });
-        eurcFormatted = formatUnits(BigInt(tokenBalEURC), 6);
-      } catch (e) {
-        console.warn("Failed to fetch EURC ERC20 balance", e);
+      let eurcBal = "0.00";
+      if (eurcToken) {
+           eurcBal = eurcToken.isNative ? nativeFormatted : await fetchERC20(eurcToken.address, eurcToken.decimals);
+      }
+      
+      let ethBal = "0.00";
+      if (ethToken) {
+          ethBal = ethToken.isNative ? nativeFormatted : await fetchERC20(ethToken.address, ethToken.decimals);
+      } else {
+          // Default to native if ETH not in list (e.g. Arc)
+          ethBal = nativeFormatted; 
       }
 
-      // 4. Update State
-      // Use floor to 4 decimals to avoid rounding up (which causes "exceeds balance" errors if user clicks MAX)
       const toFixedFloor = (numStr: string, decimals: number) => {
           const num = parseFloat(numStr);
           const factor = Math.pow(10, decimals);
@@ -778,8 +811,9 @@ export default function SwapInterface() {
       };
 
       setBalances({
-        USDC: parseFloat(usdcTokenFormatted) > 0 ? toFixedFloor(usdcTokenFormatted, 4) : toFixedFloor(usdcGasFormatted, 4),
-        EURC: toFixedFloor(eurcFormatted, 4)
+        USDC: toFixedFloor(usdcBal, 4),
+        EURC: toFixedFloor(eurcBal, 4),
+        ETH: toFixedFloor(ethBal, 4)
       });
 
     } catch (error) {
@@ -797,6 +831,12 @@ export default function SwapInterface() {
     if (!client) return false;
 
     try {
+        // Native tokens don't need approval
+        if (fromToken.isNative) {
+            setNeedsApproval(false);
+            return true;
+        }
+
         // Always check allowance for POOL_ADDRESS since we are swapping directly with Pool for both directions
         const spender = POOL_ADDRESS; 
         const encodedAllowance = encodeFunctionData({
@@ -1102,15 +1142,17 @@ export default function SwapInterface() {
 
       // Double-check allowance immediately before swapping
       // This prevents race conditions where the UI thinks it's approved but it's not
-      const isApproved = await checkAllowance();
-      if (!isApproved) {
-          toast({ 
-              title: "Approval Needed", 
-              description: "Please approve the token before swapping.",
-              variant: "destructive"
-          });
-          setNeedsApproval(true);
-          return;
+      if (!fromToken.isNative) {
+          const isApproved = await checkAllowance();
+          if (!isApproved) {
+              toast({ 
+                  title: "Approval Needed", 
+                  description: "Please approve the token before swapping.",
+                  variant: "destructive"
+              });
+              setNeedsApproval(true);
+              return;
+          }
       }
 
       // Final Balance Check
@@ -1154,28 +1196,82 @@ export default function SwapInterface() {
           // This ensures the transaction succeeds even if our frontend rate differs from the pool
           const amountOutMin = BigInt(0);
           
-          // BOTH directions now use POOL direct interaction
-          const targetAddress = POOL_ADDRESS;
-          let selector: string;
+          let targetAddress = POOL_ADDRESS;
+          let data = "0x";
 
-          if (fromToken.symbol === "USDC") {
-              // USDC -> EURC
-              selector = "0x84b065d3";
+          if (activeNetwork === 'sepolia') {
+               targetAddress = SEPOLIA_ROUTER_ADDRESS;
+               const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 mins
+               const path = [fromToken.address, toToken.address];
+               
+               // Handle Native ETH
+               if (fromToken.isNative) {
+                   // swapExactETHForTokens
+                   const WETH_ADDRESS = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14";
+                   const encodedParams = encodeAbiParameters(
+                        [
+                          { type: 'uint256' },
+                          { type: 'address[]' },
+                          { type: 'address' },
+                          { type: 'uint256' }
+                        ],
+                        [amountOutMin, [WETH_ADDRESS, toToken.address], activeAccount as `0x${string}`, BigInt(deadline)]
+                   );
+                   data = "0x7ff36ab5" + encodedParams.slice(2);
+
+               } else if (toToken.isNative) {
+                   // swapExactTokensForETH
+                   const WETH_ADDRESS = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14";
+                   const encodedParams = encodeAbiParameters(
+                        [
+                          { type: 'uint256' },
+                          { type: 'uint256' },
+                          { type: 'address[]' },
+                          { type: 'address' },
+                          { type: 'uint256' }
+                        ],
+                        [amountIn, amountOutMin, [fromToken.address, WETH_ADDRESS], activeAccount as `0x${string}`, BigInt(deadline)]
+                   );
+                   data = "0x18cbafe5" + encodedParams.slice(2);
+               } else {
+                   // swapExactTokensForTokens
+                   const encodedParams = encodeAbiParameters(
+                        [
+                          { type: 'uint256' },
+                          { type: 'uint256' },
+                          { type: 'address[]' },
+                          { type: 'address' },
+                          { type: 'uint256' }
+                        ],
+                        [amountIn, amountOutMin, path, activeAccount as `0x${string}`, BigInt(deadline)]
+                   );
+                   data = "0x38ed1739" + encodedParams.slice(2);
+               }
+
           } else {
-              // EURC -> USDC (Fixed to use Pool Direct as requested)
-              selector = "0x99d96739";
+              // ARC Network Logic
+              targetAddress = POOL_ADDRESS;
+              let selector: string;
+
+              if (fromToken.symbol === "USDC") {
+                  // USDC -> EURC
+                  selector = "0x84b065d3";
+              } else {
+                  // EURC -> USDC
+                  selector = "0x99d96739";
+              }
+              
+              const encodedParams = encodeAbiParameters(
+                [
+                  { type: 'uint256' },
+                  { type: 'uint256' },
+                  { type: 'address' }
+                ],
+                [amountIn, amountOutMin, activeAccount as `0x${string}`]
+              );
+              
+              data = selector + encodedParams.slice(2);
           }
-          
-          const encodedParams = encodeAbiParameters(
-            [
-              { type: 'uint256' },
-              { type: 'uint256' },
-              { type: 'address' }
-            ],
-            [amountIn, amountOutMin, activeAccount as `0x${string}`]
-          );
-          
-          const data = selector + encodedParams.slice(2);
 
           console.log("Sending Transaction to:", targetAddress);
           console.log("Direction:", fromToken.symbol, "->", toToken.symbol);
@@ -1185,7 +1281,7 @@ export default function SwapInterface() {
               account: activeAccount as `0x${string}`,
               to: targetAddress as `0x${string}`,
               data: data as `0x${string}`,
-              value: BigInt(0),
+              value: fromToken.isNative ? amountIn : BigInt(0),
               gas: BigInt(300000) // Explicit gas limit to prevent estimation errors
           });
 
@@ -1265,7 +1361,7 @@ export default function SwapInterface() {
   };
 
 
-  const TokenSelector = ({ selected, onSelect }: { selected: typeof TOKENS[0], onSelect: (t: typeof TOKENS[0]) => void }) => (
+  const TokenSelector = ({ selected, onSelect }: { selected: typeof ARC_TOKENS[0], onSelect: (t: typeof ARC_TOKENS[0]) => void }) => (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="ghost" className="flex items-center gap-2 bg-background border border-border hover:bg-secondary/50 text-foreground rounded-full px-3 py-1 h-10 min-w-[110px] justify-between shadow-sm">
@@ -1281,7 +1377,7 @@ export default function SwapInterface() {
           <DialogTitle>Select a token</DialogTitle>
         </DialogHeader>
         <div className="grid gap-1 py-2">
-          {TOKENS.map((token) => (
+          {currentTokens.map((token) => (
             <DialogClose asChild key={token.symbol}>
               <Button
                 variant="ghost"
@@ -1326,19 +1422,61 @@ export default function SwapInterface() {
           </Button>
           
           {/* Network Selector */}
-          <div className="hidden sm:flex items-center gap-2 bg-[#1c1038]/80 hover:bg-[#3b1f69]/50 transition-colors rounded-full px-3 py-1.5 border border-[#3b1f69]/50 cursor-pointer">
-             <div className="w-4 h-4 rounded-full bg-transparent flex items-center justify-center overflow-hidden">
-                <img 
-                    src={mode === 'bridge' && bridgeDirection === 'sepolia-to-arc' ? ethSepoliaSymbol : arcSymbol} 
-                    alt="Network" 
-                    className="w-full h-full object-contain" 
-                />
-             </div>
-             <span className="text-sm font-medium">
-                {mode === 'bridge' && bridgeDirection === 'sepolia-to-arc' ? 'Ethereum Sepolia' : 'Arc Testnet'}
-             </span>
-             <ChevronDown className="w-3 h-3 text-muted-foreground opacity-50" />
-          </div>
+          {mode === 'swap' ? (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <div className="hidden sm:flex items-center gap-2 bg-[#1c1038]/80 hover:bg-[#3b1f69]/50 transition-colors rounded-full px-3 py-1.5 border border-[#3b1f69]/50 cursor-pointer">
+                     <div className="w-4 h-4 rounded-full bg-transparent flex items-center justify-center overflow-hidden">
+                        <img 
+                            src={activeNetwork === 'sepolia' ? ethSepoliaSymbol : arcSymbol} 
+                            alt="Network" 
+                            className="w-full h-full object-contain" 
+                        />
+                     </div>
+                     <span className="text-sm font-medium">
+                        {activeNetwork === 'sepolia' ? 'Ethereum Sepolia' : 'Arc Testnet'}
+                     </span>
+                     <ChevronDown className="w-3 h-3 text-muted-foreground opacity-50" />
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-xs bg-card border-border">
+                    <DialogHeader>
+                        <DialogTitle>Select Network</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-2 py-2">
+                        <DialogClose asChild>
+                            <Button variant="ghost" className="w-full justify-start gap-3 h-12" onClick={() => setActiveNetwork('arc')}>
+                                <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center"><img src={arcSymbol} className="w-full h-full object-contain"/></div>
+                                <span className="font-semibold">Arc Testnet</span>
+                                {activeNetwork === 'arc' && <div className="ml-auto w-2 h-2 rounded-full bg-green-500"/>}
+                            </Button>
+                        </DialogClose>
+                        <DialogClose asChild>
+                            <Button variant="ghost" className="w-full justify-start gap-3 h-12" onClick={() => setActiveNetwork('sepolia')}>
+                                <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center"><img src={ethSepoliaSymbol} className="w-full h-full object-contain"/></div>
+                                <span className="font-semibold">Ethereum Sepolia</span>
+                                {activeNetwork === 'sepolia' && <div className="ml-auto w-2 h-2 rounded-full bg-green-500"/>}
+                            </Button>
+                        </DialogClose>
+                    </div>
+                </DialogContent>
+              </Dialog>
+          ) : (
+            // Bridge Mode (Static / Direction Based)
+             <div className="hidden sm:flex items-center gap-2 bg-[#1c1038]/80 hover:bg-[#3b1f69]/50 transition-colors rounded-full px-3 py-1.5 border border-[#3b1f69]/50 cursor-pointer">
+                 <div className="w-4 h-4 rounded-full bg-transparent flex items-center justify-center overflow-hidden">
+                    <img 
+                        src={bridgeDirection === 'sepolia-to-arc' ? ethSepoliaSymbol : arcSymbol} 
+                        alt="Network" 
+                        className="w-full h-full object-contain" 
+                    />
+                 </div>
+                 <span className="text-sm font-medium">
+                    {bridgeDirection === 'sepolia-to-arc' ? 'Ethereum Sepolia' : 'Arc Testnet'}
+                 </span>
+                 <ChevronDown className="w-3 h-3 text-muted-foreground opacity-50" />
+              </div>
+          )}
           
           {walletConnected && account ? (
             <div 

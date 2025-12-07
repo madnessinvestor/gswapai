@@ -1230,7 +1230,10 @@ export default function SwapInterface() {
                             <Info className="w-3 h-3" /> Receive at least
                           </div>
                           <div className="font-medium">
-                            {(parseFloat(outputAmount) * (1 - parseFloat(slippage)/100)).toFixed(6)} {toToken.symbol}
+                            {slippage === "Auto" 
+                                ? <span className="text-muted-foreground italic">Calculating...</span>
+                                : `${(parseFloat(outputAmount) * (1 - parseFloat(slippage)/100)).toFixed(6)} ${toToken.symbol}`
+                            }
                           </div>
                         </div>
                       </div>

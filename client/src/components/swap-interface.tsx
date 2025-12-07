@@ -739,11 +739,11 @@ export default function SwapInterface() {
   const checkAllowance = async () => {
     if (!account) {
       setNeedsApproval(false);
-      return;
+      return false;
     }
 
     const client = getWalletClient();
-    if (!client) return;
+    if (!client) return false;
 
     try {
         // Always check allowance for POOL_ADDRESS since we are swapping directly with Pool for both directions
@@ -769,16 +769,22 @@ export default function SwapInterface() {
         
         console.log(`Allowance: ${formatUnits(currentAllowance, fromToken.decimals)}, Required: ${inputAmount}`);
 
-        setNeedsApproval(currentAllowance < amountToSpend);
+        const needs = currentAllowance < amountToSpend;
+        setNeedsApproval(needs);
+        return !needs; // Returns true if Approved (NOT needing approval)
 
     } catch (e) {
         console.error("Check allowance failed", e);
+        return false;
     }
   };
 
   useEffect(() => {
      if (walletConnected && account && inputAmount) {
          checkAllowance();
+         // Poll allowance every 5 seconds to catch external approvals or slow updates
+         const interval = setInterval(checkAllowance, 5000);
+         return () => clearInterval(interval);
      }
   }, [walletConnected, account, inputAmount, fromToken]);
 
@@ -928,12 +934,26 @@ export default function SwapInterface() {
           
           toast({ title: "Approval Submitted", description: "Waiting for confirmation..." });
           
-          // In a real app we would wait for receipt. For mockup, we assume success after delay
+          // Poll for approval confirmation instead of fake timeout
+          const checkInterval = setInterval(async () => {
+              const isApproved = await checkAllowance();
+              if (isApproved) {
+                  clearInterval(checkInterval);
+                  setIsApproving(false);
+                  setNeedsApproval(false);
+                  toast({ title: "Approved", description: "You can now swap." });
+              }
+          }, 2000);
+
+          // Fallback timeout to stop polling after 60s
           setTimeout(() => {
-              setIsApproving(false);
-              setNeedsApproval(false);
-              toast({ title: "Approved", description: "You can now swap." });
-          }, 3000);
+              clearInterval(checkInterval);
+              if (isApproving) {
+                 setIsApproving(false);
+                 // Don't force success, just stop spinner. Let the user try checking again or it might be network delay.
+                 toast({ title: "Approval Taking Longer", description: "Check your wallet for status.", variant: "default" });
+              }
+          }, 60000);
           
       } catch (e: any) {
           console.error(e);
@@ -987,7 +1007,8 @@ export default function SwapInterface() {
               account: account as `0x${string}`,
               to: targetAddress as `0x${string}`,
               data: data as `0x${string}`,
-              value: BigInt(0)
+              value: BigInt(0),
+              gas: BigInt(300000) // Explicit gas limit to prevent estimation errors
           });
 
           toast({ title: "Swap Submitted", description: "Transaction sent to network." });

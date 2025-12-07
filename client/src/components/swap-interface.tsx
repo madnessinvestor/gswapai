@@ -15,7 +15,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, ReferenceLine } from "recharts";
 import { useToast } from "@/hooks/use-toast";
-import { createWalletClient, custom, parseUnits, encodeFunctionData, formatUnits, encodeAbiParameters } from 'viem';
+import { createWalletClient, createPublicClient, http, custom, parseUnits, encodeFunctionData, formatUnits, encodeAbiParameters } from 'viem';
 import logoImage from '@assets/d0bbfa09-77e9-4527-a95a-3ec275fefad8_1765059425973.png';
 import arcSymbol from '@assets/download_1765062780027.png';
 import gojoLogo from '@assets/Gojooo_1765068633880.png';
@@ -467,7 +467,7 @@ export default function SwapInterface() {
   const [walletConnected, setWalletConnected] = useState(false);
   const [account, setAccount] = useState("");
   const [slippage, setSlippage] = useState("0.5");
-  const [balances, setBalances] = useState({ USDC: "0.00", EURC: "0.00", ETH: "0.00" });
+  const [balances, setBalances] = useState({ USDC: "0.00", EURC: "0.00", ETH: "0.00", USDC_SEPOLIA: "0.00", USDC_ARC: "0.00" });
   const [needsApproval, setNeedsApproval] = useState(false);
   const [mode, setMode] = useState<'swap' | 'bridge'>('swap');
   const [bridgeDirection, setBridgeDirection] = useState<'sepolia-to-arc' | 'arc-to-sepolia'>('sepolia-to-arc');
@@ -763,7 +763,7 @@ export default function SwapInterface() {
         console.warn("Failed to fetch Native Gas balance", e);
       }
 
-      // Helper to fetch ERC20
+      // Helper to fetch ERC20 via Wallet Client (Connected Chain)
       const fetchERC20 = async (address: string, decimals: number) => {
           try {
             const encoded = encodeFunctionData({
@@ -781,7 +781,23 @@ export default function SwapInterface() {
           }
       };
 
-      // Identify tokens from current list
+      // Helper to fetch ERC20 via Public Client (Remote Chain)
+      const fetchRemoteERC20 = async (publicClient: any, tokenAddress: string, user: string, decimals: number) => {
+          try {
+              const bal = await publicClient.readContract({
+                  address: tokenAddress as `0x${string}`,
+                  abi: ERC20_ABI,
+                  functionName: 'balanceOf',
+                  args: [user as `0x${string}`]
+              });
+              return formatUnits(bal as bigint, decimals);
+          } catch (e) {
+              console.warn(`Failed to fetch remote balance for ${tokenAddress}`, e);
+              return "0.00";
+          }
+      };
+
+      // Identify tokens from current list (Swap Mode)
       const usdcToken = currentTokens.find(t => t.symbol === 'USDC');
       const eurcToken = currentTokens.find(t => t.symbol === 'EURC');
       const ethToken = currentTokens.find(t => t.symbol === 'ETH');
@@ -804,6 +820,23 @@ export default function SwapInterface() {
           ethBal = nativeFormatted; 
       }
 
+      // --- Cross-Chain Balances for Bridge Mode ---
+      const sepoliaClient = createPublicClient({ 
+        chain: sepolia, 
+        transport: http() 
+      });
+    
+      const arcClient = createPublicClient({ 
+        chain: arcTestnet, 
+        transport: http() 
+      });
+
+      // Fetch Sepolia USDC (Remote or Local depending on connection, but let's fetch strictly via public client for simplicity)
+      const sepoliaUsdcBal = await fetchRemoteERC20(sepoliaClient, SEPOLIA_USDC_ADDRESS, userAddress, 6);
+      
+      // Fetch Arc USDC
+      const arcUsdcBal = await fetchRemoteERC20(arcClient, USDC_ADDRESS, userAddress, 6);
+
       const toFixedFloor = (numStr: string, decimals: number) => {
           const num = parseFloat(numStr);
           const factor = Math.pow(10, decimals);
@@ -813,7 +846,9 @@ export default function SwapInterface() {
       setBalances({
         USDC: toFixedFloor(usdcBal, 4),
         EURC: toFixedFloor(eurcBal, 4),
-        ETH: toFixedFloor(ethBal, 4)
+        ETH: toFixedFloor(ethBal, 4),
+        USDC_SEPOLIA: toFixedFloor(sepoliaUsdcBal, 4),
+        USDC_ARC: toFixedFloor(arcUsdcBal, 4)
       });
 
     } catch (error) {
@@ -1659,7 +1694,7 @@ export default function SwapInterface() {
                     </>
                     ) : (
                         <>
-                        {/* FROM Input (Bridge) */}
+                          {/* FROM Input (Bridge) */}
                         <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
                           <div className="flex justify-between mb-3">
                             <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
@@ -1667,7 +1702,7 @@ export default function SwapInterface() {
                             </span>
                             <div className="flex items-center gap-2">
                                  <span className="text-xs font-medium text-muted-foreground">
-                                   Balance: <span className="text-foreground">{walletConnected ? balances.USDC : "0.00"}</span>
+                                   Balance: <span className="text-foreground">{walletConnected ? (bridgeDirection === 'sepolia-to-arc' ? balances.USDC_SEPOLIA : balances.USDC_ARC) : "0.00"}</span>
                                  </span>
                             </div>
                           </div>
@@ -1711,7 +1746,7 @@ export default function SwapInterface() {
                                 To {bridgeDirection === 'sepolia-to-arc' ? 'Arc Testnet' : 'Ethereum Sepolia'}
                             </span>
                             <span className="text-xs font-medium text-muted-foreground">
-                              Balance: <span className="text-foreground">{walletConnected ? balances.USDC : "0.00"}</span>
+                              Balance: <span className="text-foreground">{walletConnected ? (bridgeDirection === 'sepolia-to-arc' ? balances.USDC_ARC : balances.USDC_SEPOLIA) : "0.00"}</span>
                             </span>
                           </div>
                           <div className="flex items-center justify-between gap-4">

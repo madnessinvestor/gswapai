@@ -919,7 +919,9 @@ export default function SwapInterface() {
       try {
           // Always approve POOL_ADDRESS
           const spender = POOL_ADDRESS;
-          const amountToApprove = parseUnits(inputAmount, fromToken.decimals);
+          // Use Max Uint256 for infinite approval to avoid repeated approvals
+          const amountToApprove = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+          
           const data = encodeFunctionData({
               abi: ERC20_ABI,
               functionName: 'approve',
@@ -965,6 +967,19 @@ export default function SwapInterface() {
   const handleSwap = async () => {
       const client = getWalletClient();
       if (!client || !account) return;
+
+      // Double-check allowance immediately before swapping
+      // This prevents race conditions where the UI thinks it's approved but it's not
+      const isApproved = await checkAllowance();
+      if (!isApproved) {
+          toast({ 
+              title: "Approval Needed", 
+              description: "Please approve the token before swapping.",
+              variant: "destructive"
+          });
+          setNeedsApproval(true);
+          return;
+      }
 
       setIsSwapping(true);
       try {

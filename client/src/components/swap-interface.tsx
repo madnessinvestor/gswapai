@@ -819,6 +819,21 @@ export default function SwapInterface() {
         toast({ title: "Connected", description: `Wallet connected: ${address.slice(0,6)}...` });
         
         // Listeners would go here (simplified for brevity)
+        if ((window as any).ethereum) {
+            (window as any).ethereum.on('accountsChanged', (accounts: string[]) => {
+                if (accounts.length > 0) {
+                    setAccount(accounts[0]);
+                    fetchBalances(accounts[0]);
+                    toast({ title: "Account Changed", description: `Switched to ${accounts[0].slice(0,6)}...` });
+                } else {
+                    disconnectWallet();
+                }
+            });
+            
+            (window as any).ethereum.on('chainChanged', () => {
+                window.location.reload();
+            });
+        }
 
     } catch (error: any) {
         console.error(error);
@@ -851,6 +866,22 @@ export default function SwapInterface() {
                 setWalletConnected(true);
                 fetchBalances(address);
                 
+                // Set up listeners for existing connection too
+                if ((window as any).ethereum) {
+                    (window as any).ethereum.on('accountsChanged', (accounts: string[]) => {
+                        if (accounts.length > 0) {
+                            setAccount(accounts[0]);
+                            fetchBalances(accounts[0]);
+                            toast({ title: "Account Changed", description: `Switched to ${accounts[0].slice(0,6)}...` });
+                        } else {
+                            disconnectWallet();
+                        }
+                    });
+                     (window as any).ethereum.on('chainChanged', () => {
+                        window.location.reload();
+                    });
+                }
+
                 // Try to ensure chain is correct silently
                 try {
                     await client.switchChain({ id: arcTestnet.id });
@@ -864,6 +895,14 @@ export default function SwapInterface() {
     };
     
     checkConnection();
+    
+    // Cleanup listeners
+    return () => {
+        if ((window as any).ethereum && (window as any).ethereum.removeListener) {
+             (window as any).ethereum.removeAllListeners('accountsChanged');
+             (window as any).ethereum.removeAllListeners('chainChanged');
+        }
+    };
   }, []);
 
   // Exchange Rate Logic
@@ -1233,6 +1272,17 @@ export default function SwapInterface() {
                              <span className="text-xs font-medium text-muted-foreground">
                                Balance: <span className="text-foreground">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
                              </span>
+                             {walletConnected && (
+                                 <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-4 w-4 ml-1 rounded-full opacity-50 hover:opacity-100" 
+                                    onClick={() => fetchBalances(account)}
+                                    title="Refresh Balance"
+                                 >
+                                    <RefreshCw className="h-3 w-3" />
+                                 </Button>
+                             )}
                              {walletConnected && (
                                  <div className="flex items-center gap-1 bg-[#3b1f69]/30 rounded-lg p-0.5 border border-[#3b1f69]/50">
                                     {[25, 50, 100].map(pct => (

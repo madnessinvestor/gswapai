@@ -426,22 +426,45 @@ export default function SwapInterface() {
   const [balances, setBalances] = useState({ USDC: "0.00", EURC: "0.00" });
   const [needsApproval, setNeedsApproval] = useState(false);
   
-  // Initialize trades with dynamic timestamps relative to now
+  // Initialize trades with 100 random trades
   const [trades, setTrades] = useState(() => {
       const now = Date.now();
-      return INITIAL_TRADES.map(t => {
-          // Parse "Xm ago" from initial data to create a relative timestamp
-          const mins = parseInt(t.time);
-          return {
-              ...t,
-              timestamp: now - (mins * 60000)
-          };
-      });
+      return Array.from({ length: 100 }, (_, i) => {
+        const isBuy = Math.random() > 0.5;
+        const amount = (Math.random() * 500 + 10).toFixed(4); // EURC Amount
+        const usdcAmt = (parseFloat(amount) * 7.56).toFixed(4);
+        
+        const hashSeed = Math.floor(Math.random() * 1000000).toString(16);
+        const hash = `0x${hashSeed.padStart(64, '0')}`;
+        
+        // Time: random time between 1m and 7 days ago
+        const timeAgoMins = Math.floor(Math.random() * 10000) + 1; 
+        const timestamp = now - (timeAgoMins * 60000);
+        
+        const timeDisplay = timeAgoMins > 1440 
+            ? `${Math.floor(timeAgoMins / 1440)}d ago` 
+            : timeAgoMins > 60 
+                ? `${Math.floor(timeAgoMins / 60)}h ago`
+                : `${timeAgoMins}m ago`;
+
+        return {
+            trader: `0x${Math.floor(Math.random()*16777215).toString(16).padEnd(40, '0').slice(0, 4)}...${Math.floor(Math.random()*16777215).toString(16).padEnd(40, '0').slice(-4)}`,
+            fullTrader: `0x${Math.floor(Math.random()*16777215).toString(16).padEnd(40, '0')}`,
+            type: isBuy ? 'Buy' : 'Sell',
+            tokenAmount: amount,
+            tokenSymbol: 'EURC',
+            usdcAmount: usdcAmt,
+            time: timeDisplay,
+            timestamp: timestamp,
+            hash: `${hash.slice(0,6)}...${hash.slice(-4)}`,
+            fullHash: hash
+        };
+    }).sort((a, b) => b.timestamp - a.timestamp);
   });
 
-  const [myTrades, setMyTrades] = useState<any[]>([]); // Store all user trades
+  const [myTrades, setMyTrades] = useState<any[]>([]); // Kept for internal logic but UI hidden
   const [chartTimeframe, setChartTimeframe] = useState("RealTime");
-  const [showMyTrades, setShowMyTrades] = useState(false);
+  const [showMyTrades, setShowMyTrades] = useState(false); // Always false
   const [currentPage, setCurrentPage] = useState(1);
   const [inputPercentage, setInputPercentage] = useState(0);
   const itemsPerPage = 20;
@@ -1578,30 +1601,10 @@ export default function SwapInterface() {
             <Card className="w-full bg-[#1c1038]/90 backdrop-blur-md border-[#3b1f69]/50 shadow-xl rounded-[24px] overflow-hidden col-span-1 lg:col-span-12">
                 <div className="p-5 border-b border-[#3b1f69]/30 bg-[#1c1038]/30 flex items-center justify-between">
                    <div className="flex flex-col gap-1">
-                     <h3 className="font-bold text-base text-foreground">Trade History & Trades</h3>
+                     <h3 className="font-bold text-base text-foreground">Trade History</h3>
                      <span className="text-xs text-muted-foreground">
-                       {showMyTrades ? "Showing your recent trades" : "Showing all recent trades"}
+                       Showing all recent trades
                      </span>
-                   </div>
-                   
-                   <div className="flex bg-secondary/30 rounded-lg p-1 gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setShowMyTrades(false)}
-                        className={`h-7 px-3 text-xs rounded-md transition-all ${!showMyTrades ? 'bg-background shadow-sm text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
-                      >
-                        All Trades
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setShowMyTrades(true)}
-                        disabled={!account}
-                        className={`h-7 px-3 text-xs rounded-md transition-all ${showMyTrades ? 'bg-background shadow-sm text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
-                      >
-                        My Trades
-                      </Button>
                    </div>
                 </div>
                 <div className="overflow-x-auto">

@@ -1068,6 +1068,7 @@ export default function SwapInterface() {
                   duration: 5000,
                   className: "bg-blue-500/15 border-blue-500/30 text-blue-500",
               });
+               /* 
                try {
                 const audio = new Audio(successSound);
                 audio.volume = 0.5;
@@ -1075,6 +1076,7 @@ export default function SwapInterface() {
               } catch (err) {
                 console.error("Audio initialization failed", err);
               }
+              */
           }, 3000);
           return;
       }
@@ -1601,7 +1603,11 @@ export default function SwapInterface() {
                             <Info className="w-3 h-3" /> Rate
                           </div>
                           <div className="font-medium">
-                            1 {fromToken.symbol} = {(parseFloat(outputAmount)/parseFloat(inputAmount) || 0).toFixed(6)} {toToken.symbol}
+                            {mode === 'bridge' ? (
+                                "1 USDC = 1 USDC"
+                            ) : (
+                                `1 ${fromToken.symbol} = ${(parseFloat(outputAmount)/parseFloat(inputAmount) || 0).toFixed(6)} ${toToken.symbol}`
+                            )}
                           </div>
                         </div>
                         <div className="flex justify-between text-xs">
@@ -1609,7 +1615,7 @@ export default function SwapInterface() {
                             <Info className="w-3 h-3" /> Price impact
                           </div>
                           <div className="font-medium text-green-500">
-                            0.302%
+                            {mode === 'bridge' ? "0.00%" : "0.302%"}
                           </div>
                         </div>
                         <div className="flex justify-between text-xs">

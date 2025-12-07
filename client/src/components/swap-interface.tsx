@@ -226,6 +226,8 @@ const randomHex = (length: number) => {
   return result;
 };
 
+import { Slider } from "@/components/ui/slider";
+
 export default function SwapInterface() {
   const { toast } = useToast();
   const [inputAmount, setInputAmount] = useState("");
@@ -244,7 +246,51 @@ export default function SwapInterface() {
   const [chartTimeframe, setChartTimeframe] = useState("1D");
   const [showMyTrades, setShowMyTrades] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [inputPercentage, setInputPercentage] = useState(0);
   const itemsPerPage = 20;
+
+  // Calculate percentage when input changes
+  useEffect(() => {
+    if (!walletConnected || !inputAmount) {
+       if (inputPercentage !== 0) setInputPercentage(0);
+       return;
+    }
+    
+    const balance = parseFloat(balances[fromToken.symbol as keyof typeof balances] || "0");
+    if (balance > 0) {
+        const currentVal = parseFloat(inputAmount);
+        const pct = Math.min(100, Math.max(0, (currentVal / balance) * 100));
+        // Only update if significantly different to avoid loops with slider
+        if (Math.abs(pct - inputPercentage) > 1) {
+            setInputPercentage(pct);
+        }
+    }
+  }, [inputAmount, walletConnected, balances, fromToken]);
+
+  // Handle percentage click
+  const handlePercentageClick = (percentage: number) => {
+      if (!walletConnected) return;
+      
+      const balance = parseFloat(balances[fromToken.symbol as keyof typeof balances] || "0");
+      if (balance <= 0) return;
+      
+      const newValue = (balance * (percentage / 100)).toFixed(fromToken.decimals === 6 ? 4 : 6);
+      setInputAmount(newValue);
+      setInputPercentage(percentage);
+  };
+
+  // Handle slider change
+  const handleSliderChange = (value: number[]) => {
+      if (!walletConnected) return;
+      const percentage = value[0];
+      setInputPercentage(percentage);
+      
+      const balance = parseFloat(balances[fromToken.symbol as keyof typeof balances] || "0");
+      if (balance > 0) {
+          const newValue = (balance * (percentage / 100)).toFixed(fromToken.decimals === 6 ? 4 : 6);
+          setInputAmount(newValue);
+      }
+  };
 
   // Load My Trades from LocalStorage and generate mock history on account change
   useEffect(() => {
@@ -342,6 +388,10 @@ export default function SwapInterface() {
     : parseFloat(inputAmount || "0") * 7.6055;
   
   const isAmountTooLow = parseFloat(inputAmount || "0") > 0 && usdValue < 5;
+  
+  // Check for insufficient balance
+  const currentBalance = parseFloat(balances[fromToken.symbol as keyof typeof balances] || "0");
+  const isInsufficientBalance = parseFloat(inputAmount || "0") > currentBalance;
 
   // Initialize Viem Client
 
@@ -866,11 +916,26 @@ export default function SwapInterface() {
                     <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
                       <div className="flex justify-between mb-3">
                         <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">From</span>
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Balance: <span className="text-foreground">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
-                        </span>
+                        <div className="flex items-center gap-2">
+                             <span className="text-xs font-medium text-muted-foreground">
+                               Balance: <span className="text-foreground">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
+                             </span>
+                             {walletConnected && (
+                                 <div className="flex items-center gap-1 bg-[#3b1f69]/30 rounded-lg p-0.5 border border-[#3b1f69]/50">
+                                    {[25, 50, 100].map(pct => (
+                                        <button
+                                            key={pct}
+                                            onClick={() => handlePercentageClick(pct)}
+                                            className="text-[10px] px-1.5 py-0.5 rounded-md hover:bg-primary/20 hover:text-primary text-muted-foreground transition-all font-medium"
+                                        >
+                                            {pct}%
+                                        </button>
+                                    ))}
+                                 </div>
+                             )}
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center justify-between gap-4 mb-2">
                         <input
                           type="text"
                           placeholder="0.0"
@@ -883,6 +948,20 @@ export default function SwapInterface() {
                         />
                         <TokenSelector selected={fromToken} onSelect={setFromToken} />
                       </div>
+                      
+                      {/* Slider */}
+                      {walletConnected && (
+                          <div className="px-1 pt-2 pb-1">
+                              <Slider 
+                                  defaultValue={[0]} 
+                                  max={100} 
+                                  step={1} 
+                                  value={[inputPercentage]}
+                                  onValueChange={handleSliderChange}
+                                  className="cursor-pointer"
+                              />
+                          </div>
+                      )}
                     </div>
 
                     {/* Separator */}
@@ -966,6 +1045,16 @@ export default function SwapInterface() {
                           </div>
                        </div>
                     )}
+                    
+                    {isInsufficientBalance && (
+                       <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-xs font-bold text-red-500">Insufficient Balance</p>
+                            <p className="text-[10px] text-red-500/80">You don't have enough {fromToken.symbol} for this swap.</p>
+                          </div>
+                       </div>
+                    )}
                   </div>
 
                   <div className="p-4 pt-0">
@@ -973,7 +1062,7 @@ export default function SwapInterface() {
                          <Button 
                             className="w-full h-14 text-lg font-bold rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
                             onClick={handleApprove}
-                            disabled={!walletConnected || !inputAmount || isApproving || isAmountTooLow}
+                            disabled={!walletConnected || !inputAmount || isApproving || isAmountTooLow || isInsufficientBalance}
                           >
                             {isApproving ? (
                               <div className="flex items-center gap-2"><RefreshCw className="animate-spin w-5 h-5"/> Approving...</div>
@@ -983,11 +1072,11 @@ export default function SwapInterface() {
                         <Button 
                           className={`w-full h-14 text-lg font-bold rounded-xl shadow-lg ${!walletConnected ? 'bg-secondary text-muted-foreground' : 'bg-primary hover:bg-primary/90 shadow-primary/20'}`}
                           onClick={handleSwap}
-                          disabled={walletConnected && (!inputAmount || isSwapping || isAmountTooLow)}
+                          disabled={walletConnected && (!inputAmount || isSwapping || isAmountTooLow || isInsufficientBalance)}
                         >
                           {isSwapping ? (
                             <div className="flex items-center gap-2"><RefreshCw className="animate-spin w-5 h-5"/> Swapping...</div>
-                          ) : !walletConnected ? "Connect Wallet" : !inputAmount ? "Enter Amount" : isAmountTooLow ? "Amount too low" : "Swap"}
+                          ) : !walletConnected ? "Connect Wallet" : !inputAmount ? "Enter Amount" : isInsufficientBalance ? "Insufficient Balance" : isAmountTooLow ? "Amount too low" : "Swap"}
                         </Button>
                     )}
                     

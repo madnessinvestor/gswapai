@@ -19,6 +19,7 @@ import { createWalletClient, custom, parseUnits, encodeFunctionData, formatUnits
 import logoImage from '@assets/d0bbfa09-77e9-4527-a95a-3ec275fefad8_1765059425973.png';
 import arcSymbol from '@assets/download_1765062780027.png';
 import gojoLogo from '@assets/Gojooo_1765068633880.png';
+import ethSepoliaSymbol from '@assets/Icone_Ethereum_Sepolia_1765115979836.png';
 import successSound from '@assets/success.mp3';
 import PriceChart from "./price-chart";
 // import { arc } from 'viem/chains'; // Removed as we define custom chain
@@ -39,6 +40,24 @@ const arcTestnet = {
   },
   blockExplorers: {
     default: { name: 'ArcScan', url: 'https://testnet.arcscan.app' },
+  },
+} as const;
+
+const sepolia = {
+  id: 11155111,
+  name: 'Ethereum Sepolia',
+  network: 'sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    public: { http: ['https://rpc.sepolia.org'] },
+    default: { http: ['https://rpc.sepolia.org'] },
+  },
+  blockExplorers: {
+    default: { name: 'Etherscan', url: 'https://sepolia.etherscan.io' },
   },
 } as const;
 
@@ -425,6 +444,8 @@ export default function SwapInterface() {
   const [slippage, setSlippage] = useState("0.5");
   const [balances, setBalances] = useState({ USDC: "0.00", EURC: "0.00" });
   const [needsApproval, setNeedsApproval] = useState(false);
+  const [mode, setMode] = useState<'swap' | 'bridge'>('swap');
+  const [bridgeDirection, setBridgeDirection] = useState<'sepolia-to-arc' | 'arc-to-sepolia'>('sepolia-to-arc');
   
   // Initialize trades with 100 random trades
   const [trades, setTrades] = useState(() => {
@@ -1034,6 +1055,30 @@ export default function SwapInterface() {
   };
 
   const handleSwap = async () => {
+      if (mode === 'bridge') {
+          setIsSwapping(true);
+          // Simulate Bridge Delay
+          setTimeout(() => {
+              setIsSwapping(false);
+              setInputAmount("");
+              setOutputAmount("");
+              toast({
+                  title: "Bridge Initiated",
+                  description: `Bridging ${inputAmount} USDC from ${bridgeDirection === 'sepolia-to-arc' ? 'Sepolia' : 'Arc Testnet'} to ${bridgeDirection === 'sepolia-to-arc' ? 'Arc Testnet' : 'Sepolia'}.`,
+                  duration: 5000,
+                  className: "bg-blue-500/15 border-blue-500/30 text-blue-500",
+              });
+               try {
+                const audio = new Audio(successSound);
+                audio.volume = 0.5;
+                audio.play().catch(e => console.error("Audio play failed", e));
+              } catch (err) {
+                console.error("Audio initialization failed", err);
+              }
+          }, 3000);
+          return;
+      }
+
       const client = getWalletClient();
       if (!client) return;
       
@@ -1281,9 +1326,15 @@ export default function SwapInterface() {
           {/* Network Selector */}
           <div className="hidden sm:flex items-center gap-2 bg-[#1c1038]/80 hover:bg-[#3b1f69]/50 transition-colors rounded-full px-3 py-1.5 border border-[#3b1f69]/50 cursor-pointer">
              <div className="w-4 h-4 rounded-full bg-transparent flex items-center justify-center overflow-hidden">
-                <img src={arcSymbol} alt="Arc" className="w-full h-full object-contain" />
+                <img 
+                    src={mode === 'bridge' && bridgeDirection === 'sepolia-to-arc' ? ethSepoliaSymbol : arcSymbol} 
+                    alt="Network" 
+                    className="w-full h-full object-contain" 
+                />
              </div>
-             <span className="text-sm font-medium">Arc Testnet</span>
+             <span className="text-sm font-medium">
+                {mode === 'bridge' && bridgeDirection === 'sepolia-to-arc' ? 'Ethereum Sepolia' : 'Arc Testnet'}
+             </span>
              <ChevronDown className="w-3 h-3 text-muted-foreground opacity-50" />
           </div>
           
@@ -1318,12 +1369,29 @@ export default function SwapInterface() {
             {/* Swap Card (Left) */}
             <div className="lg:col-span-5 order-1">
                 <Card className="w-full bg-[#1c1038]/90 backdrop-blur-md border-[#3b1f69]/50 shadow-xl rounded-[24px] overflow-hidden">
+                  {/* Header */}
                   <div className="p-5 flex justify-between items-center border-b border-[#3b1f69]/30 bg-[#1c1038]/30">
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-lg">Swap</h2>
-                      <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold uppercase tracking-wide border border-orange-500/20">
-                        Arc Testnet Only
-                      </span>
+                    <div className="flex bg-[#130b29]/60 p-1 rounded-lg border border-[#3b1f69]/50">
+                        <button
+                            onClick={() => setMode('swap')}
+                            className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
+                                mode === 'swap' 
+                                ? 'bg-[#3b1f69] text-white shadow-sm' 
+                                : 'text-muted-foreground hover:text-white'
+                            }`}
+                        >
+                            Swap
+                        </button>
+                        <button
+                            onClick={() => setMode('bridge')}
+                            className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
+                                mode === 'bridge' 
+                                ? 'bg-[#3b1f69] text-white shadow-sm' 
+                                : 'text-muted-foreground hover:text-white'
+                            }`}
+                        >
+                            Bridge
+                        </button>
                     </div>
                     <SettingsDialog 
                       open={isSettingsOpen} 
@@ -1334,73 +1402,75 @@ export default function SwapInterface() {
                   </div>
 
                   <div className="p-4 space-y-1">
-                    {/* FROM Input */}
-                    <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
-                      <div className="flex justify-between mb-3">
-                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">From</span>
-                        <div className="flex items-center gap-2">
-                             <span className="text-xs font-medium text-muted-foreground">
-                               Balance: <span className="text-foreground">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
-                             </span>
-                             {walletConnected && (
-                                 <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-4 w-4 ml-1 rounded-full opacity-50 hover:opacity-100" 
-                                    onClick={() => fetchBalances(account)}
-                                    title="Refresh Balance"
-                                 >
-                                    <RefreshCw className="h-3 w-3" />
-                                 </Button>
-                             )}
-                             {walletConnected && (
-                                 <div className="flex items-center gap-1 bg-[#3b1f69]/30 rounded-lg p-0.5 border border-[#3b1f69]/50">
-                                    {[25, 50, 100].map(pct => (
-                                        <button
-                                            key={pct}
-                                            onClick={() => handlePercentageClick(pct)}
-                                            className="text-[10px] px-1.5 py-0.5 rounded-md hover:bg-primary/20 hover:text-primary text-muted-foreground transition-all font-medium"
-                                        >
-                                            {pct}%
-                                        </button>
-                                    ))}
-                                 </div>
-                             )}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between gap-4 mb-2">
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans"
-                          value={inputAmount}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d*\.?\d*$/.test(val)) setInputAmount(val);
-                          }}
-                        />
-                        <TokenSelector 
-                          selected={fromToken} 
-                          onSelect={(token) => {
-                            if (token.symbol === toToken.symbol) {
-                              // Swap if same
-                              setToToken(fromToken);
-                            }
-                            setFromToken(token);
-                          }} 
-                        />
-                      </div>
-                      
-                      {/* Slider */}
-                      {walletConnected && (
-                          <div className="px-1 pt-2 pb-1">
-                              <Slider 
-                                  defaultValue={[0]} 
-                                  max={100} 
-                                  step={1} 
-                                  value={[inputPercentage]}
-                                  onValueChange={handleSliderChange}
-                                  className="cursor-pointer"
+                    {mode === 'swap' ? (
+                        <>
+                        {/* FROM Input (Swap) */}
+                        <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
+                          <div className="flex justify-between mb-3">
+                            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">From</span>
+                            <div className="flex items-center gap-2">
+                                 <span className="text-xs font-medium text-muted-foreground">
+                                   Balance: <span className="text-foreground">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
+                                 </span>
+                                 {walletConnected && (
+                                     <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-4 w-4 ml-1 rounded-full opacity-50 hover:opacity-100" 
+                                        onClick={() => fetchBalances(account)}
+                                        title="Refresh Balance"
+                                     >
+                                        <RefreshCw className="h-3 w-3" />
+                                     </Button>
+                                 )}
+                                 {walletConnected && (
+                                     <div className="flex items-center gap-1 bg-[#3b1f69]/30 rounded-lg p-0.5 border border-[#3b1f69]/50">
+                                        {[25, 50, 100].map(pct => (
+                                            <button
+                                                key={pct}
+                                                onClick={() => handlePercentageClick(pct)}
+                                                className="text-[10px] px-1.5 py-0.5 rounded-md hover:bg-primary/20 hover:text-primary text-muted-foreground transition-all font-medium"
+                                            >
+                                                {pct}%
+                                            </button>
+                                        ))}
+                                     </div>
+                                 )}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-4 mb-2">
+                            <input
+                              type="text"
+                              placeholder="0.0"
+                              className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans"
+                              value={inputAmount}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d*\.?\d*$/.test(val)) setInputAmount(val);
+                              }}
+                            />
+                            <TokenSelector 
+                              selected={fromToken} 
+                              onSelect={(token) => {
+                                if (token.symbol === toToken.symbol) {
+                                  // Swap if same
+                                  setToToken(fromToken);
+                                }
+                                setFromToken(token);
+                              }} 
+                            />
+                          </div>
+                          
+                          {/* Slider */}
+                          {walletConnected && (
+                              <div className="px-1 pt-2 pb-1">
+                                  <Slider 
+                                      defaultValue={[0]} 
+                                      max={100} 
+                                      step={1} 
+                                      value={[inputPercentage]}
+                                      onValueChange={handleSliderChange}
+                                      className="cursor-pointer"
                               />
                           </div>
                       )}
@@ -1419,7 +1489,7 @@ export default function SwapInterface() {
                         </div>
                     </div>
 
-                    {/* TO Input */}
+                    {/* TO Input (Swap) */}
                     <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
                       <div className="flex justify-between mb-3">
                         <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">To</span>
@@ -1428,7 +1498,7 @@ export default function SwapInterface() {
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
-                        <input
+                         <input
                           type="text"
                           placeholder="0.0"
                           readOnly
@@ -1439,7 +1509,6 @@ export default function SwapInterface() {
                           selected={toToken} 
                           onSelect={(token) => {
                             if (token.symbol === fromToken.symbol) {
-                              // Swap if same
                               setFromToken(toToken);
                             }
                             setToToken(token);
@@ -1447,6 +1516,82 @@ export default function SwapInterface() {
                         />
                       </div>
                     </div>
+                    </>
+                    ) : (
+                        <>
+                        {/* FROM Input (Bridge) */}
+                        <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
+                          <div className="flex justify-between mb-3">
+                            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                                From {bridgeDirection === 'sepolia-to-arc' ? 'Ethereum Sepolia' : 'Arc Testnet'}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                 <span className="text-xs font-medium text-muted-foreground">
+                                   Balance: <span className="text-foreground">{walletConnected ? balances.USDC : "0.00"}</span>
+                                 </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-4 mb-2">
+                            <input
+                              type="text"
+                              placeholder="0.0"
+                              className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans"
+                              value={inputAmount}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d*\.?\d*$/.test(val)) {
+                                    setInputAmount(val);
+                                    setOutputAmount(val); // 1:1 Bridge
+                                }
+                              }}
+                            />
+                            <Button variant="ghost" className="flex items-center gap-2 bg-background border border-border hover:bg-secondary/50 text-foreground rounded-full px-3 py-1 h-10 min-w-[110px] justify-between shadow-sm cursor-default">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold">$</div>
+                                <span className="font-semibold">USDC</span>
+                              </div>
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Separator (Bridge Switch) */}
+                        <div className="relative h-2 z-10 flex justify-center items-center">
+                            <div 
+                                className="bg-background p-1.5 rounded-full shadow-md border border-border/50 cursor-pointer hover:rotate-180 transition-all duration-500 hover:scale-110"
+                                onClick={() => setBridgeDirection(prev => prev === 'sepolia-to-arc' ? 'arc-to-sepolia' : 'sepolia-to-arc')}
+                            >
+                                <ArrowDown className="w-4 h-4 text-primary" />
+                            </div>
+                        </div>
+
+                        {/* TO Input (Bridge) */}
+                        <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
+                          <div className="flex justify-between mb-3">
+                            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                                To {bridgeDirection === 'sepolia-to-arc' ? 'Arc Testnet' : 'Ethereum Sepolia'}
+                            </span>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Balance: <span className="text-foreground">{walletConnected ? balances.USDC : "0.00"}</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4">
+                             <input
+                              type="text"
+                              placeholder="0.0"
+                              className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans cursor-default"
+                              value={outputAmount}
+                              readOnly
+                            />
+                            <Button variant="ghost" className="flex items-center gap-2 bg-background border border-border hover:bg-secondary/50 text-foreground rounded-full px-3 py-1 h-10 min-w-[110px] justify-between shadow-sm cursor-default">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold">$</div>
+                                <span className="font-semibold">USDC</span>
+                              </div>
+                            </Button>
+                          </div>
+                        </div>
+                        </>
+                    )}
 
                     {/* Detailed Info Section */}
                     {inputAmount && (
@@ -1530,7 +1675,7 @@ export default function SwapInterface() {
                         >
                           {isSwapping ? (
                             <div className="flex items-center gap-2"><RefreshCw className="animate-spin w-5 h-5"/> Swapping...</div>
-                          ) : !walletConnected ? "Connect Wallet" : !inputAmount ? "Enter Amount" : isInsufficientBalance ? "Insufficient Balance" : isAmountTooLow ? "Amount too low" : "Swap"}
+                          ) : !walletConnected ? "Connect Wallet" : !inputAmount ? "Enter Amount" : isInsufficientBalance ? "Insufficient Balance" : isAmountTooLow ? "Amount too low" : mode === 'bridge' ? "Bridge USDC" : "Swap"}
                         </Button>
                     )}
                     

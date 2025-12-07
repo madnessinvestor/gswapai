@@ -1011,7 +1011,11 @@ export default function SwapInterface() {
                 return updated;
               });
 
-              toast({ title: "Swap Successful", description: "Balances updated." });
+              toast({ 
+                title: "Swap Successful", 
+                description: "Balances updated.",
+                className: "bg-green-500/15 border-green-500/30 text-green-500"
+              });
           }, 5000);
 
       } catch (e: any) {

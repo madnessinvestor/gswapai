@@ -1290,17 +1290,6 @@ export default function SwapInterface() {
                         <div className="absolute bottom-4 left-6 pointer-events-none opacity-20">
                             <span className="text-4xl font-black tracking-tighter text-muted-foreground">GOJO</span>
                         </div>
-
-                        {/* Volume Indicators Overlay */}
-                        <div className="absolute bottom-4 right-14 flex gap-3 z-10">
-                            {/* Global 24h Volume */}
-                            <div className="bg-[#1c1038]/80 backdrop-blur-sm border border-[#3b1f69]/50 rounded-lg px-3 py-1.5 flex flex-col items-end shadow-lg">
-                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">24h Vol (Global)</span>
-                                <span className="text-sm font-bold text-foreground">
-                                    ${globalVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
-                            </div>
-                        </div>
                      </div>
                 </Card>
             </div>

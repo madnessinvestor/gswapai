@@ -19,6 +19,7 @@ import { createWalletClient, custom, parseUnits, encodeFunctionData, formatUnits
 import logoImage from '@assets/d0bbfa09-77e9-4527-a95a-3ec275fefad8_1765059425973.png';
 import arcSymbol from '@assets/download_1765062780027.png';
 import gojoLogo from '@assets/Gojooo_1765068633880.png';
+import successSound from '@assets/success.mp3';
 import PriceChart from "./price-chart";
 // import { arc } from 'viem/chains'; // Removed as we define custom chain
 
@@ -1024,6 +1025,16 @@ export default function SwapInterface() {
                 ),
                 className: "bg-green-500/15 border-green-500/30 text-green-500"
               });
+              
+              // Play success sound
+              try {
+                const audio = new Audio(successSound);
+                audio.volume = 0.5;
+                audio.play().catch(e => console.error("Audio play failed", e));
+              } catch (err) {
+                console.error("Audio initialization failed", err);
+              }
+
           }, 5000);
 
       } catch (e: any) {

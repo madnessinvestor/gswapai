@@ -360,11 +360,35 @@ const formatTimeAgo = (timestamp: number) => {
                       placeholder="Custom" 
                       value={tempSlippage !== "Auto" && !["0.1", "0.5", "1.0"].includes(tempSlippage) ? tempSlippage : ""}
                       onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === "" || parseFloat(val) >= 0) {
-                              setTempSlippage(val === "" ? "Auto" : val);
+                          let val = e.target.value;
+                          
+                          // Allow empty string to clear input (resets to Auto on empty)
+                          if (val === "") {
+                              setTempSlippage("Auto");
+                              return;
+                          }
+
+                          // Ensure only numbers (and decimals) are entered
+                          // Note: input type="number" already restricts most non-numeric chars,
+                          // but prevents some edge cases. We validate the parsed value.
+                          const numVal = parseFloat(val);
+
+                          if (!isNaN(numVal)) {
+                              // Enforce strict limits: 0 <= value <= 80
+                              if (numVal < 0) return; // Ignore negative input attempts
+                              if (numVal > 80) val = "80"; // Cap at 80%
+
+                              setTempSlippage(val);
                           }
                       }}
+                      onKeyDown={(e) => {
+                          // Block minus sign and 'e' (exponential) to enforce strict positive numbers
+                          if (["-", "e", "E"].includes(e.key)) {
+                              e.preventDefault();
+                          }
+                      }}
+                      max="80"
+                      min="0"
                       className={`w-full h-9 rounded-md border bg-[#130b29]/60 px-3 pr-8 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${tempSlippage !== "Auto" && !["0.1", "0.5", "1.0"].includes(tempSlippage) ? "border-primary text-primary ring-1 ring-primary" : "border-[#3b1f69]/50 text-foreground"}`}
                   />
                   <span className="absolute right-3 text-xs text-muted-foreground">%</span>

@@ -6,9 +6,10 @@ interface PriceChartProps {
     timeframe: string;
     fromSymbol: string;
     toSymbol: string;
+    onPriceUpdate?: (price: number) => void;
 }
 
-export default function PriceChart({ timeframe, fromSymbol, toSymbol }: PriceChartProps) {
+export default function PriceChart({ timeframe, fromSymbol, toSymbol, onPriceUpdate }: PriceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<any>(null); // To store series reference
@@ -175,6 +176,11 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol }: PriceCha
       // Update displayed price format depending on value
       // If < 1, show more decimals
       setCurrentPrice(price < 1 ? price.toFixed(6) : price.toFixed(4));
+      
+      // Notify parent component of price update
+      if (onPriceUpdate) {
+          onPriceUpdate(price);
+      }
 
       const now = Math.floor(Date.now() / 1000);
       

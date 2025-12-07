@@ -308,72 +308,10 @@ export default function SwapInterface() {
   // State for dynamic exchange rate
   const [exchangeRate, setExchangeRate] = useState(7.56); // Default fallback
 
-  // Fetch Live Exchange Rate
-  useEffect(() => {
-    const fetchRate = async () => {
-        try {
-            // Using public RPC for read-only if wallet not connected, or just reuse the logic
-            // We'll use a simple fetch to the Router using an ephemeral provider/request if possible
-            // Or just use window.ethereum if available, else fallback to hardcoded
-            
-            // For simplicity and reliability in mockup, we'll try to use the public RPC
-            // But we can't easily use ethers here without importing it.
-            // Let's use a basic fetch to the RPC endpoint directly to avoid heavy imports/setup
-            
-            const rpcUrl = "https://rpc.testnet.arc.network";
-            const amountIn = "1000000"; // 1 USDC/EURC (6 decimals)
-            
-            // Function selector for getAmountOut(uint256): 0x0902f1ac
-            // But wait, price-chart uses getAmountOut(uint256). 
-            // Signature: getAmountOut(uint256) -> keccak256("getAmountOut(uint256)")
-            // Let's calculate it or use the one from ABI
-            // keccak256("getAmountOut(uint256)") = 0x1F00CA74... wait, let me verify.
-            
-            // Actually, let's just use the hardcoded logic with a "simulated" drift if RPC fails,
-            // BUT the user specifically said transactions are failing, which implies price mismatch.
-            // So we MUST try to get the real price.
-            
-            // Let's use the same logic as PriceChart but wrapped here.
-            // We can use the window.ethereum if present (best bet)
-            
-            if (typeof window !== 'undefined' && (window as any).ethereum) {
-                const client = createWalletClient({
-                    chain: arcTestnet,
-                    transport: custom((window as any).ethereum)
-                });
-                
-                const data = encodeFunctionData({
-                    abi: ROUTER_ABI,
-                    functionName: 'getAmountOut',
-                    args: [parseUnits("1", 6)]
-                });
-                
-                const result = await (client as any).request({
-                    method: 'eth_call',
-                    params: [{
-                        to: ROUTER_ADDRESS as `0x${string}`,
-                        data: data
-                    }, 'latest']
-                }) as string;
-                
-                if (result) {
-                    const rate = parseInt(result, 16) / 1e6;
-                    if (rate > 0) {
-                        console.log("Fetched live rate:", rate);
-                        setExchangeRate(rate);
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn("Failed to fetch live rate, using fallback", e);
-        }
-    };
-    
-    fetchRate();
-    const interval = setInterval(fetchRate, 10000); // Update every 10s
-    return () => clearInterval(interval);
-  }, []);
-
+  // Fetch Live Exchange Rate - REMOVED redundant interval
+  // The price is now driven by the PriceChart component via callback
+  // which ensures visual synchronization.
+  
   // Simulate Global Volume Ticker
   useEffect(() => {
     const interval = setInterval(() => {
@@ -520,11 +458,16 @@ export default function SwapInterface() {
   
   // Calculate current exchange rate
   // Use the fetched exchangeRate (which is EURC -> USDC price ~7.56)
-  const currentRate = fromToken.symbol === "EURC" && toToken.symbol === "USDC" 
-      ? exchangeRate 
-      : fromToken.symbol === "USDC" && toToken.symbol === "EURC" 
-          ? (1 / exchangeRate) 
-          : 1;
+  // If we are looking at EURC/USDC, the Chart sends us the EURC->USDC price directly.
+  // If we are looking at USDC/EURC, the Chart sends us the inverted USDC->EURC price directly.
+  // So we just use exchangeRate as is, because the Chart handles inversion before sending!
+  
+  // Wait, let's check PriceChart logic:
+  // if (fromSymbol === "USDC") return 1 / price; -> returns inverted price
+  // onPriceUpdate(price) -> sends this inverted price
+  // So exchangeRate IS the correct rate for From -> To
+  
+  const currentRate = exchangeRate;
 
   // Dynamic Chart Data based on pair
   const chartData = generateChartData(currentRate, currentRate * 0.02, chartTimeframe);
@@ -535,8 +478,33 @@ export default function SwapInterface() {
   // Validation: Minimum 5 USDC value
   const usdValue = fromToken.symbol === 'USDC' 
     ? parseFloat(inputAmount || "0") 
-    : parseFloat(inputAmount || "0") * exchangeRate; // Use dynamic rate
+    : parseFloat(inputAmount || "0") * exchangeRate; // Use dynamic rate (approximate if inverted)
+  // Fix: If inverted, exchangeRate is USDC/EURC (~0.13), so EURC * Rate = USDC? No.
+  // If from=USDC, exchangeRate is ~0.13 EURC per USDC.
+  // If from=EURC, exchangeRate is ~7.56 USDC per EURC.
   
+  // We need value in USDC specifically for the $5 check.
+  // If from=USDC, inputAmount is USDC.
+  // If from=EURC, inputAmount * Rate (7.56) = USDC Value.
+  
+  // The 'exchangeRate' state now holds the "From -> To" rate.
+  // So if from=EURC, rate=7.56. Value = input * 7.56. Correct.
+  // If from=USDC, rate=0.13. Value = input. Correct.
+  
+  // Wait, the logic below was:
+  // const usdValue = fromToken.symbol === 'USDC' ? input : input * rate?
+  // Let's refine:
+  
+  const getUsdcValue = () => {
+      if (!inputAmount) return 0;
+      const val = parseFloat(inputAmount);
+      if (fromToken.symbol === 'USDC') return val;
+      // If EURC, convert to USDC.
+      // If from=EURC, currentRate is EURC->USDC rate (~7.56).
+      return val * currentRate;
+  };
+  
+  const usdValue = getUsdcValue();
   const isAmountTooLow = parseFloat(inputAmount || "0") > 0 && usdValue < 5;
   
   // Check for insufficient balance
@@ -1286,7 +1254,16 @@ export default function SwapInterface() {
                      </div>
                      
                      <div className="w-full h-full z-10 p-4 min-h-[400px]">
-                        <PriceChart timeframe={chartTimeframe} fromSymbol={fromToken.symbol} toSymbol={toToken.symbol} />
+                        <PriceChart 
+                            timeframe={chartTimeframe} 
+                            fromSymbol={fromToken.symbol} 
+                            toSymbol={toToken.symbol}
+                            onPriceUpdate={(price) => {
+                                // Update Exchange Rate directly from Chart
+                                // This ensures the UI Rate and Chart are perfectly synced
+                                setExchangeRate(price);
+                            }}
+                        />
                      </div>
                 </Card>
             </div>

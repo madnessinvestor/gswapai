@@ -1023,7 +1023,8 @@ export default function SwapInterface() {
                     </div>
                   </div>
                 ),
-                className: "bg-green-500/15 border-green-500/30 text-green-500"
+                className: "bg-green-500/15 border-green-500/30 text-green-500",
+                duration: 4000
               });
               
               // Play success sound

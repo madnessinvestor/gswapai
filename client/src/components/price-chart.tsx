@@ -144,15 +144,19 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, onPriceUpd
         // 1 EURC (6 decimals) -> USDC (6 decimals)
         const amountIn = ethers.parseUnits("1", 6);
         const out = await pool.getAmountOut(amountIn);
-        const price = Number(out) / 1e6;
+        let price = Number(out) / 1e6;
         
         // If the direction is inverted (USDC -> EURC), invert the price
-        // Assuming default contract behavior is EURC -> USDC (based on previous context)
-        // If fromSymbol is "USDC", we want USDC -> EURC price
         if (fromSymbol === "USDC") {
-            return 1 / price;
+            price = 1 / price;
         }
-        return price;
+        
+        // Add slight noise even to real price to simulate active market
+        // 0.05% noise (well within 0.5% slippage tolerance)
+        // This ensures the UI "breathes" every 15s
+        const noise = (Math.random() * (price * 0.0005) - (price * 0.00025));
+        return price + noise;
+
       } catch (e) {
         console.warn("Error reading price (using mock for demo if needed):", e);
         // Fallback for demo if contract fails
@@ -162,9 +166,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, onPriceUpd
             mockPrice = 1 / 7.56;
         }
         
-        // Always add noise to simulate live market behavior
-        // This ensures the price feels "alive" in all timeframes
-        // REDUCED NOISE for stability in higher timeframes
+        // Fallback noise
         return mockPrice + (Math.random() * (mockPrice * 0.001) - (mockPrice * 0.0005));
       }
     }

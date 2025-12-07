@@ -1206,7 +1206,7 @@ export default function SwapInterface() {
                      </div>
                      
                      <div className="w-full h-full z-10 p-4 min-h-[400px]">
-                        <PriceChart />
+                        <PriceChart timeframe={chartTimeframe} />
                      </div>
                 </Card>
             </div>

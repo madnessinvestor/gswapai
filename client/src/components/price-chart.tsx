@@ -2,10 +2,59 @@ import { useEffect, useRef, useState } from "react";
 import { createChart, ColorType, IChartApi, AreaSeries, Time } from "lightweight-charts";
 import { ethers } from "ethers";
 
-export default function PriceChart() {
+interface PriceChartProps {
+    timeframe: string;
+}
+
+export default function PriceChart({ timeframe }: PriceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<any>(null); // To store series reference
   const [currentPrice, setCurrentPrice] = useState<string | null>(null);
+
+  // Function to generate initial data based on timeframe
+  const generateInitialData = (basePrice: number, period: string) => {
+      const data: any[] = [];
+      const now = Math.floor(Date.now() / 1000);
+      let interval = 60; // default 1 minute
+      let count = 100;
+
+      switch(period) {
+          case '1s':
+              interval = 1;
+              count = 60;
+              break;
+          case '1H':
+              interval = 60;
+              count = 60;
+              break;
+          case '1D':
+              interval = 3600; // 1 hour candles
+              count = 24;
+              break;
+          case '1W':
+              interval = 3600 * 4; // 4 hour candles
+              count = 42; // ~1 week
+              break;
+          case '1M':
+              interval = 86400; // 1 day candles
+              count = 30;
+              break;
+          default:
+              interval = 60;
+      }
+
+      let currentP = basePrice;
+      for (let i = count; i > 0; i--) {
+          // Add some volatility
+          currentP += (Math.random() - 0.5) * (basePrice * 0.005); 
+          data.push({
+              time: (now - (i * interval)) as Time,
+              value: currentP
+          });
+      }
+      return data;
+  };
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -43,6 +92,8 @@ export default function PriceChart() {
       priceLineVisible: true,
       lastValueVisible: true,
     });
+    
+    seriesRef.current = series;
 
     // -------------------------
     // ARC CONFIGURATION
@@ -74,19 +125,12 @@ export default function PriceChart() {
       }
     }
 
-    const data: any[] = [];
-    
-    // Initialize with some historical data for visual appeal
-    const now = Math.floor(Date.now() / 1000);
-    let basePrice = 7.56;
-    for (let i = 60; i > 0; i--) {
-        basePrice += (Math.random() - 0.5) * 0.02;
-        data.push({
-            time: (now - (i * 60)) as Time,
-            value: basePrice
-        });
-    }
-    series.setData(data);
+    // Initial Data Load
+    // We'll use a base price around 7.56 to start generating history
+    // Ideally we would fetch the current price first, but for speed we can start generating
+    // and then correct/append live data.
+    const initialData = generateInitialData(7.56, timeframe);
+    series.setData(initialData);
 
     async function tick() {
       const price = await getPrice();
@@ -119,7 +163,7 @@ export default function PriceChart() {
         chartRef.current.remove();
       }
     };
-  }, []);
+  }, [timeframe]); // Re-run when timeframe changes
 
   return (
     <div className="relative w-full">

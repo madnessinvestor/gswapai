@@ -45,7 +45,7 @@ const arcTestnet = {
 
 const sepolia = {
   id: 11155111,
-  name: 'Ethereum Sepolia',
+  name: 'Sepolia',
   network: 'sepolia',
   nativeCurrency: {
     decimals: 18,
@@ -53,8 +53,8 @@ const sepolia = {
     symbol: 'ETH',
   },
   rpcUrls: {
-    public: { http: ['https://rpc.sepolia.org'] },
-    default: { http: ['https://rpc.sepolia.org'] },
+    public: { http: ['https://eth-sepolia.g.alchemy.com/v2/demo'] },
+    default: { http: ['https://eth-sepolia.g.alchemy.com/v2/demo'] },
   },
   blockExplorers: {
     default: { name: 'Etherscan', url: 'https://sepolia.etherscan.io' },

@@ -15,7 +15,7 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
   // Helper to get interval seconds
   const getIntervalSeconds = (period: string) => {
       switch(period) {
-          case '5s': return 5;
+          case 'RealTime': return 5;
           case '15m': return 15 * 60;
           case '1H': return 3600;
           case '1D': return 86400;
@@ -31,13 +31,13 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
       const now = Math.floor(Date.now() / 1000);
       const interval = getIntervalSeconds(period);
       
-      // Align the end time to the grid
-      const alignedNow = Math.floor(now / interval) * interval;
+      // Align the end time to the grid (except for RealTime)
+      const alignedNow = period === 'RealTime' ? now : Math.floor(now / interval) * interval;
 
       let count = 100;
       // Adjust history count based on timeframe to fill screen nicely
       switch(period) {
-          case '5s': count = 100; break;
+          case 'RealTime': count = 100; break;
           case '15m': count = 50; break;
           case '1H': count = 48; break;
           case '1D': count = 30; break;
@@ -46,7 +46,7 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
       }
 
       let currentP = basePrice;
-      // Generate history up to the *previous* interval
+      // Generate history
       for (let i = count; i > 0; i--) {
           // Add some volatility
           currentP += (Math.random() - 0.5) * (basePrice * 0.005); 
@@ -55,7 +55,7 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
               value: currentP
           });
       }
-      // Add current open interval with base price (will be updated by tick immediately)
+      // Add current open interval with base price
       data.push({
           time: alignedNow as Time,
           value: currentP
@@ -80,11 +80,11 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
       height: 400,
       timeScale: {
         timeVisible: true,
-        secondsVisible: timeframe === '5s',
+        secondsVisible: timeframe === 'RealTime',
         borderColor: '#3b1f69',
         tickMarkFormatter: (time: number, tickMarkType: any, locale: any) => {
             const date = new Date(time * 1000);
-            if (timeframe === '5s') return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            if (timeframe === 'RealTime') return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             if (timeframe === '15m' || timeframe === '1H') return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
             if (timeframe === '1D') return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
             return date.toLocaleDateString(locale, { month: 'short', year: '2-digit' });
@@ -155,11 +155,19 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
       setCurrentPrice(price.toFixed(4));
 
       const now = Math.floor(Date.now() / 1000);
-      const interval = getIntervalSeconds(timeframe);
-      // Align timestamp to the start of the interval (e.g., 00:00, 00:15, 00:30)
-      const alignedTime = (Math.floor(now / interval) * interval) as Time;
       
-      series.update({ time: alignedTime, value: price });
+      let updateTime: Time;
+      
+      if (timeframe === 'RealTime') {
+          // For RealTime, just use current timestamp (no alignment)
+          updateTime = now as Time;
+      } else {
+          // For other timeframes, align to grid
+          const interval = getIntervalSeconds(timeframe);
+          updateTime = (Math.floor(now / interval) * interval) as Time;
+      }
+      
+      series.update({ time: updateTime, value: price });
     }
 
     // Initial tick

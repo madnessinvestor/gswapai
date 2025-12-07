@@ -6,14 +6,18 @@ interface PriceChartProps {
     timeframe: string;
     fromSymbol: string;
     toSymbol: string;
+    currentRate?: number | null;
     onPriceUpdate?: (price: number) => void;
 }
 
-export default function PriceChart({ timeframe, fromSymbol, toSymbol, onPriceUpdate }: PriceChartProps) {
+export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRate, onPriceUpdate }: PriceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<any>(null); // To store series reference
-  const [currentPrice, setCurrentPrice] = useState<string | null>(null);
+  // Initialize local state with prop if available to prevent jump
+  const [currentPrice, setCurrentPrice] = useState<string | null>(
+      currentRate ? (currentRate < 1 ? currentRate.toFixed(6) : currentRate.toFixed(4)) : null
+  );
 
   // Helper to get interval seconds
   const getIntervalSeconds = (period: string) => {
@@ -32,7 +36,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, onPriceUpd
   const lastGridTimeRef = useRef<number | null>(null);
 
   // Function to generate initial data based on timeframe
-  const generateInitialData = (basePrice: number, period: string) => {
+  const generateInitialData = (basePrice: number, period: string, targetEndPrice?: number | null) => {
       const data: any[] = [];
       const now = Math.floor(Date.now() / 1000);
       const interval = getIntervalSeconds(period);
@@ -54,21 +58,43 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, onPriceUpd
           case '1M': count = 12; break;
       }
 
+      // Generate a random walk first
+      const rawValues: number[] = [];
       let currentP = basePrice;
-      // Generate history
-      for (let i = count; i > 0; i--) {
-          // Add some volatility
-          currentP += (Math.random() - 0.5) * (basePrice * 0.005); 
+      
+      // We generate count + 1 values (history + current)
+      for (let i = 0; i <= count; i++) {
+          rawValues.push(currentP);
+          // Add volatility for next step
+          currentP += (Math.random() - 0.5) * (basePrice * 0.005);
+      }
+
+      // If we have a target end price (the current live price), 
+      // shift the entire series so the LAST value matches the target exactly.
+      // This prevents the "jump" when switching timeframes.
+      let shift = 0;
+      if (targetEndPrice) {
+          const lastGenerated = rawValues[rawValues.length - 1];
+          shift = targetEndPrice - lastGenerated;
+      }
+
+      // Construct the data array
+      // rawValues[0] is the oldest (count intervals ago)
+      // rawValues[count] is the newest (now)
+      // Wait, my loop above pushed in order 0..count. 
+      // If i=0 is start, i=count is end.
+      
+      for (let i = 0; i <= count; i++) {
+          // Reverse index for time calculation: 
+          // index 0 is 'count' intervals ago
+          // index 'count' is 0 intervals ago (now)
+          const intervalsAgo = count - i;
+          
           data.push({
-              time: (alignedNow - (i * interval)) as Time,
-              value: currentP
+              time: (alignedNow - (intervalsAgo * interval)) as Time,
+              value: rawValues[i] + shift
           });
       }
-      // Add current open interval with base price
-      data.push({
-          time: alignedNow as Time,
-          value: currentP
-      });
 
       return data;
   };
@@ -173,12 +199,18 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, onPriceUpd
 
     // Initial Data Load
     // We'll use a base price around 7.56 (or 1/7.56) to start generating history
-    const basePrice = fromSymbol === "USDC" ? (1/7.56) : 7.56;
-    const initialData = generateInitialData(basePrice, timeframe);
+    // Use currentRate if available as the base anchor
+    const basePrice = currentRate || (fromSymbol === "USDC" ? (1/7.56) : 7.56);
+    
+    // Pass currentRate as the target end price to ensure continuity
+    const initialData = generateInitialData(basePrice, timeframe, currentRate);
+    
     series.setData(initialData);
     chart.timeScale().fitContent();
 
     async function tick() {
+      // Use currentRate as starting point if we haven't fetched yet? 
+      // No, fetch fresh price.
       const price = await getPrice();
       // Check if component is still mounted and chart exists
       if (!price || !chartRef.current || !seriesRef.current) return;

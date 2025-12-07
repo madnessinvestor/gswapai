@@ -1239,6 +1239,7 @@ export default function SwapInterface() {
                             timeframe={chartTimeframe} 
                             fromSymbol={fromToken.symbol} 
                             toSymbol={toToken.symbol}
+                            currentRate={exchangeRate}
                             onPriceUpdate={(price) => {
                                 // Update Exchange Rate directly from Chart
                                 // This ensures the UI Rate and Chart are perfectly synced

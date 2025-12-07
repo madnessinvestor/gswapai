@@ -151,11 +151,9 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, onPriceUpd
             price = 1 / price;
         }
         
-        // Add slight noise even to real price to simulate active market
-        // 0.05% noise (well within 0.5% slippage tolerance)
-        // This ensures the UI "breathes" every 15s
-        const noise = (Math.random() * (price * 0.0005) - (price * 0.00025));
-        return price + noise;
+        // Return the EXACT price from contract to ensure transactions don't fail due to slippage
+        // "Updating" means refreshing the data, not adding fake noise.
+        return price;
 
       } catch (e) {
         console.warn("Error reading price (using mock for demo if needed):", e);
@@ -166,7 +164,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, onPriceUpd
             mockPrice = 1 / 7.56;
         }
         
-        // Fallback noise
+        // Fallback noise - only for fallback
         return mockPrice + (Math.random() * (mockPrice * 0.001) - (mockPrice * 0.0005));
       }
     }

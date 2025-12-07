@@ -1284,7 +1284,7 @@ export default function SwapInterface() {
                           { type: 'address' },
                           { type: 'uint256' }
                         ],
-                        [amountOutMin, [WETH_ADDRESS, toToken.address], activeAccount as `0x${string}`, BigInt(deadline)]
+                        [amountOutMin, [WETH_ADDRESS as `0x${string}`, toToken.address as `0x${string}`], activeAccount as `0x${string}`, BigInt(deadline)]
                    );
                    data = "0x7ff36ab5" + encodedParams.slice(2);
 
@@ -1299,7 +1299,7 @@ export default function SwapInterface() {
                           { type: 'address' },
                           { type: 'uint256' }
                         ],
-                        [amountIn, amountOutMin, [fromToken.address, WETH_ADDRESS], activeAccount as `0x${string}`, BigInt(deadline)]
+                        [amountIn, amountOutMin, [fromToken.address as `0x${string}`, WETH_ADDRESS as `0x${string}`], activeAccount as `0x${string}`, BigInt(deadline)]
                    );
                    data = "0x18cbafe5" + encodedParams.slice(2);
                } else {
@@ -1312,7 +1312,7 @@ export default function SwapInterface() {
                           { type: 'address' },
                           { type: 'uint256' }
                         ],
-                        [amountIn, amountOutMin, path, activeAccount as `0x${string}`, BigInt(deadline)]
+                        [amountIn, amountOutMin, path as `0x${string}`[], activeAccount as `0x${string}`, BigInt(deadline)]
                    );
                    data = "0x38ed1739" + encodedParams.slice(2);
                }

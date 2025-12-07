@@ -208,14 +208,14 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol }: PriceCha
         chartRef.current.remove();
       }
     };
-  }, [timeframe]); // Re-run when timeframe changes
+  }, [timeframe, fromSymbol, toSymbol]); // Re-run when timeframe or symbols change
 
   return (
     <div className="relative w-full">
         {currentPrice && (
              <div className="absolute top-2 left-2 z-10 flex flex-col bg-[#1c1038]/80 backdrop-blur-md border border-[#3b1f69] p-2 rounded-lg shadow-xl">
-                <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">EURC/USDC</span>
-                <span className="text-2xl font-bold text-orange-500">${currentPrice}</span>
+                <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">{fromSymbol}/{toSymbol}</span>
+                <span className="text-2xl font-bold text-orange-500">{fromSymbol === 'USDC' || fromSymbol === 'EURC' ? '$' : ''}{currentPrice}</span>
              </div>
         )}
         <div ref={chartContainerRef} className="w-full h-[400px]" />

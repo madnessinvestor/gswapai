@@ -4,9 +4,11 @@ import { ethers } from "ethers";
 
 interface PriceChartProps {
     timeframe: string;
+    fromSymbol: string;
+    toSymbol: string;
 }
 
-export default function PriceChart({ timeframe }: PriceChartProps) {
+export default function PriceChart({ timeframe, fromSymbol, toSymbol }: PriceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<any>(null); // To store series reference
@@ -131,28 +133,43 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
         // 1 EURC (6 decimals) -> USDC (6 decimals)
         const amountIn = ethers.parseUnits("1", 6);
         const out = await pool.getAmountOut(amountIn);
-        return Number(out) / 1e6;
+        const price = Number(out) / 1e6;
+        
+        // If the direction is inverted (USDC -> EURC), invert the price
+        // Assuming default contract behavior is EURC -> USDC (based on previous context)
+        // If fromSymbol is "USDC", we want USDC -> EURC price
+        if (fromSymbol === "USDC") {
+            return 1 / price;
+        }
+        return price;
       } catch (e) {
         console.warn("Error reading price (using mock for demo if needed):", e);
         // Fallback for demo if contract fails
-        // Return a value around 7.56
-        return 7.56 + (Math.random() * 0.02 - 0.01);
+        
+        let mockPrice = 7.56;
+        if (fromSymbol === "USDC") {
+            mockPrice = 1 / 7.56;
+        }
+        
+        // Add some noise
+        return mockPrice + (Math.random() * (mockPrice * 0.005) - (mockPrice * 0.0025));
       }
     }
 
     // Initial Data Load
-    // We'll use a base price around 7.56 to start generating history
-    // Ideally we would fetch the current price first, but for speed we can start generating
-    // and then correct/append live data.
-    const initialData = generateInitialData(7.56, timeframe);
+    // We'll use a base price around 7.56 (or 1/7.56) to start generating history
+    const basePrice = fromSymbol === "USDC" ? (1/7.56) : 7.56;
+    const initialData = generateInitialData(basePrice, timeframe);
     series.setData(initialData);
     chart.timeScale().fitContent();
 
     async function tick() {
       const price = await getPrice();
       if (!price) return;
-
-      setCurrentPrice(price.toFixed(4));
+      
+      // Update displayed price format depending on value
+      // If < 1, show more decimals
+      setCurrentPrice(price < 1 ? price.toFixed(6) : price.toFixed(4));
 
       const now = Math.floor(Date.now() / 1000);
       

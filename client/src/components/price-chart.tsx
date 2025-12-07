@@ -20,25 +20,29 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
       let count = 100;
 
       switch(period) {
-          case '1s':
-              interval = 1;
-              count = 60;
+          case '5s':
+              interval = 5;
+              count = 100; // 500 seconds history
+              break;
+          case '15m':
+              interval = 15 * 60;
+              count = 50;
               break;
           case '1H':
-              interval = 60;
-              count = 60;
+              interval = 3600; 
+              count = 48; // 2 days
               break;
           case '1D':
-              interval = 3600; // 1 hour candles
-              count = 24;
+              interval = 86400; 
+              count = 30; // 1 month
               break;
           case '1W':
-              interval = 3600 * 4; // 4 hour candles
-              count = 42; // ~1 week
+              interval = 86400 * 7; 
+              count = 24; // ~6 months
               break;
           case '1M':
-              interval = 86400; // 1 day candles
-              count = 30;
+              interval = 86400 * 30; 
+              count = 12; // 1 year
               break;
           default:
               interval = 60;
@@ -72,8 +76,15 @@ export default function PriceChart({ timeframe }: PriceChartProps) {
       height: 400,
       timeScale: {
         timeVisible: true,
-        secondsVisible: false,
+        secondsVisible: timeframe === '5s' || timeframe === '15m' || timeframe === '1H',
         borderColor: '#3b1f69',
+        tickMarkFormatter: (time: number, tickMarkType: any, locale: any) => {
+            const date = new Date(time * 1000);
+            if (timeframe === '5s') return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            if (timeframe === '15m' || timeframe === '1H') return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+            if (timeframe === '1D') return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+            return date.toLocaleDateString(locale, { month: 'short', year: '2-digit' });
+        },
       },
       rightPriceScale: {
         borderColor: '#3b1f69',

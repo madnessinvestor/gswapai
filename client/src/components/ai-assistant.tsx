@@ -50,7 +50,8 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
         const toTokenObj = tokens.find(t => t.symbol === pendingSwap.to);
         
         if (fromTokenObj && toTokenObj) {
-          // Pass full token objects and ensure amount is a string
+          // Pass full token objects and ensure amount is correctly passed as a string
+          // This should match the signature of handleSwapAction in SwapInterface
           await onSwapAction(fromTokenObj, toTokenObj, String(pendingSwap.amount));
         } else {
           console.error("Tokens not found for swap:", pendingSwap.from, pendingSwap.to);

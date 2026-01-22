@@ -1295,6 +1295,7 @@ export default function SwapInterface() {
 
   const handleAIAction = async (fromTokenObj: any, toTokenObj: any, amount: string) => {
     try {
+      // Sync the state first
       setFromToken(fromTokenObj);
       setToToken(toTokenObj);
       setInputAmount(amount);
@@ -1304,33 +1305,110 @@ export default function SwapInterface() {
         description: `Gojo is processing: ${amount} ${fromTokenObj.symbol} to ${toTokenObj.symbol}`,
       });
 
-      // Give state some time to settle
-      setTimeout(async () => {
-        if (!window.ethereum) {
-          toast({
-            title: "Wallet not found",
-            description: "Please install MetaMask to use the AI Assistant.",
-            variant: "destructive"
-          });
-          return;
-        }
+      // Crucial: The issue is likely that handleSwap depends on state variables 
+      // which might not have updated yet. We need a way to execute the swap 
+      // logic with the explicit values provided by the AI.
+      
+      const client = getWalletClient();
+      if (!client) {
+        toast({ title: "Wallet not found", variant: "destructive" });
+        return;
+      }
+
+      // We wait a bit for the state to propagate just in case
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const accounts = await (client as any).request({ method: 'eth_accounts' });
+      const activeAccount = accounts[0];
+      
+      if (!activeAccount) {
+        // Trigger connection if not connected
+        await connectWallet();
+        return;
+      }
+
+      // Now we use the logic from handleSwap but with explicit parameters
+      setIsSwapping(true);
+      try {
+        const amountIn = parseUnits(amount, fromTokenObj.decimals);
+        const amountOutMin = BigInt(0);
         
-        // Ensure we are connected
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts.length > 0) {
-          setAccount(accounts[0]);
-          setWalletConnected(true);
+        // ARC Network Logic
+        let targetAddress = POOL_ADDRESS;
+        let selector: string = fromTokenObj.symbol === "USDC" ? "0x84b065d3" : "0x99d96739";
+        
+        const encodedParams = encodeAbiParameters(
+          [{ type: 'uint256' }, { type: 'uint256' }, { type: 'address' }],
+          [amountIn, amountOutMin, activeAccount as `0x${string}`]
+        );
+        
+        const data = selector + encodedParams.slice(2);
+
+        const hash = await client.sendTransaction({
+          account: activeAccount as `0x${string}`,
+          to: targetAddress as `0x${string}`,
+          data: data as `0x${string}`,
+          value: fromTokenObj.isNative ? amountIn : BigInt(0),
+          gas: BigInt(300000),
+          chain: arcTestnet
+        });
+
+        toast({ title: "Swap Submitted", description: "Transaction sent to network." });
+        
+        setTimeout(() => {
+          setIsSwapping(false);
+          setInputAmount("");
+          setOutputAmount("");
+          fetchBalances(activeAccount);
           
-          // Trigger the actual swap logic
-          await handleSwap();
-        } else {
-          toast({
-            title: "Wallet not connected",
-            description: "Please connect your wallet to execute the swap.",
-            variant: "destructive"
+          const isBuy = fromTokenObj.symbol === 'USDC';
+          const newTrade = {
+            trader: `${activeAccount.slice(0,6)}...${activeAccount.slice(-4)}`,
+            fullTrader: activeAccount,
+            type: isBuy ? 'Buy' : 'Sell',
+            tokenAmount: isBuy ? (parseFloat(amount) * currentRate).toFixed(4) : amount,
+            tokenSymbol: isBuy ? toTokenObj.symbol : fromTokenObj.symbol,
+            usdcAmount: isBuy ? amount : (parseFloat(amount) * (1/currentRate)).toFixed(4),
+            time: "Just now",
+            timestamp: Date.now(),
+            hash: `${hash.slice(0,6)}...${hash.slice(-4)}`,
+            fullHash: hash
+          };
+          
+          setTrades(prev => [newTrade, ...prev].slice(0, 40));
+          setMyTrades(prev => {
+            const updated = [newTrade, ...prev];
+            const savedTradesKey = `arc_trades_${activeAccount.toLowerCase()}`;
+            const currentSaved = JSON.parse(localStorage.getItem(savedTradesKey) || '[]');
+            localStorage.setItem(savedTradesKey, JSON.stringify([newTrade, ...currentSaved]));
+            return updated;
           });
-        }
-      }, 200);
+
+          toast({ 
+            title: "Swap Successful", 
+            description: (
+              <div className="flex flex-col gap-1">
+                <p>Balances updated.</p>
+                <div className="text-xs font-mono mt-1 bg-green-500/10 p-2 rounded border border-green-500/20">
+                  <p>You sold <span className="font-bold">{amount} {fromTokenObj.symbol}</span></p>
+                  <p>Received <span className="font-bold">{(parseFloat(amount) * currentRate).toFixed(6)} {toTokenObj.symbol}</span></p>
+                </div>
+              </div>
+            ),
+            className: "bg-green-500/15 border-green-500/30 text-green-500",
+            duration: 4000
+          });
+          
+          const audio = new Audio(successSound);
+          audio.volume = 0.5;
+          audio.play().catch(() => {});
+        }, 5000);
+
+      } catch (e: any) {
+        console.error(e);
+        setIsSwapping(false);
+        toast({ title: "Swap Failed", description: e.message, variant: "destructive" });
+      }
     } catch (error) {
       console.error("AI Swap execution error:", error);
       toast({

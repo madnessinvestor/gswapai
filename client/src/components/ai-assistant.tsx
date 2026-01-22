@@ -45,7 +45,16 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
           amount: data.amount
         });
       } else if (data.action === "EXECUTE_SWAP" && pendingSwap) {
-        await onSwapAction(pendingSwap.from, pendingSwap.to, pendingSwap.amount);
+        // Encontre os objetos de token completos a partir dos símbolos
+        const fromTokenObj = tokens.find(t => t.symbol === pendingSwap.from);
+        const toTokenObj = tokens.find(t => t.symbol === pendingSwap.to);
+        
+        if (fromTokenObj && toTokenObj) {
+          await onSwapAction(fromTokenObj, toTokenObj, pendingSwap.amount);
+        } else {
+          console.error("Tokens not found for swap:", pendingSwap.from, pendingSwap.to);
+          setChat((prev) => [...prev, { role: "assistant", content: "Não consegui encontrar os tokens para realizar a troca. Algo está errado no meu reino." }]);
+        }
         setPendingSwap(null);
       } else if (data.action === "CANCEL_SWAP") {
         setPendingSwap(null);

@@ -24,6 +24,12 @@ import PriceChart from "./price-chart";
 import AISwapAssistant from "./ai-assistant";
 
 // Define Arc Testnet Custom Chain for Viem
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
 const arcTestnet = {
   id: 5042002,
   name: 'Arc Testnet',
@@ -1287,26 +1293,52 @@ export default function SwapInterface() {
 
   const [activeTab, setActiveTab] = useState<"swap" | "ai">("swap");
 
-  const handleAIAction = async (from: string, to: string, amount: string) => {
-    const fromT = ARC_TOKENS.find(t => t.symbol === from) || fromToken;
-    const toT = ARC_TOKENS.find(t => t.symbol === to) || toToken;
-    
-    setFromToken(fromT);
-    setToToken(toT);
-    setInputAmount(amount);
-    
-    // Check if we can execute swap immediately or if approval is needed
-    // The handleSwap function logic is already defined, we trigger it.
-    // We stay in the AI tab
-    toast({
-      title: "AI Executing Swap",
-      description: `Gojo is processing: ${amount} ${from} to ${to}`,
-    });
+  const handleAIAction = async (fromTokenObj: any, toTokenObj: any, amount: string) => {
+    try {
+      setFromToken(fromTokenObj);
+      setToToken(toTokenObj);
+      setInputAmount(amount);
+      
+      toast({
+        title: "AI Executing Swap",
+        description: `Gojo is processing: ${amount} ${fromTokenObj.symbol} to ${toTokenObj.symbol}`,
+      });
 
-    // Wait for state updates to propagate
-    setTimeout(() => {
-        handleSwap();
-    }, 500);
+      // Give state some time to settle
+      setTimeout(async () => {
+        if (!window.ethereum) {
+          toast({
+            title: "Wallet not found",
+            description: "Please install MetaMask to use the AI Assistant.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        // Ensure we are connected
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (accounts && accounts.length > 0) {
+          setAccount(accounts[0]);
+          setWalletConnected(true);
+          
+          // Trigger the actual swap logic
+          await handleSwap();
+        } else {
+          toast({
+            title: "Wallet not connected",
+            description: "Please connect your wallet to execute the swap.",
+            variant: "destructive"
+          });
+        }
+      }, 200);
+    } catch (error) {
+      console.error("AI Swap execution error:", error);
+      toast({
+        title: "Execution Error",
+        description: "Something went wrong during the AI swap execution.",
+        variant: "destructive"
+      });
+    }
   };
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);

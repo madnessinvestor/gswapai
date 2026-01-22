@@ -433,7 +433,7 @@ export default function SwapInterface() {
       return Array.from({ length: 100 }, (_, i) => {
         const isBuy = Math.random() > 0.5;
         const amount = (Math.random() * 500 + 10).toFixed(4); // EURC Amount
-        const usdcAmt = (parseFloat(amount) * 7.56).toFixed(4);
+        const usdcAmt = (parseFloat(amount) / 0.9412).toFixed(4);
         
         const hashSeed = Math.floor(Math.random() * 1000000).toString(16);
         const hash = `0x${hashSeed.padStart(64, '0')}`;
@@ -472,9 +472,8 @@ export default function SwapInterface() {
   const [globalVolume, setGlobalVolume] = useState(43400.00); // Simulated start volume to match $43.40K example
   
   // State for dynamic exchange rate
-  // Default should be correct for the initial pair USDC -> EURC
-  // Since USDC -> EURC is ~0.132 (1/7.56)
-  const [exchangeRate, setExchangeRate] = useState(1/7.56);
+  // Default: 1 USDC ≈ 0.94 EURC
+  const [exchangeRate, setExchangeRate] = useState(0.9412);
 
   // Fetch Live Exchange Rate - REMOVED redundant interval
   // The price is now driven by the PriceChart component via callback
@@ -566,9 +565,8 @@ export default function SwapInterface() {
     for (let i = 0; i < numHistoricalTrades; i++) {
         const isBuy = seededRandom() > 0.5;
         const amount = (seededRandom() * 500 + 10).toFixed(4); // EURC Amount
-        // Consistent rate: 1 EURC = ~7.56 USDC (High volatility testnet rate)
-        // Regardless of direction, USDC amount is EURC * Rate
-        const usdcAmt = (parseFloat(amount) * 7.56).toFixed(4);
+        // Consistent rate: 1 USDC ≈ 0.94 EURC
+        const usdcAmt = (parseFloat(amount) / 0.9412).toFixed(4);
         
         // Generate a stable hash based on index and seed
         const hashSeed = Math.floor(seededRandom() * 1000000).toString(16);
@@ -964,8 +962,8 @@ export default function SwapInterface() {
       if (Math.random() > 0.7) {
         const isBuy = Math.random() > 0.5;
         const amount = (Math.random() * 100 + 1).toFixed(4); // EURC Amount
-        // Consistent rate: 1 EURC = ~7.56 USDC
-        const usdcAmt = (parseFloat(amount) * 7.56).toFixed(4);
+        // Consistent rate: 1 USDC ≈ 0.94 EURC
+        const usdcAmt = (parseFloat(amount) / 0.9412).toFixed(4);
         
         const hashHex = randomHex(64);
         const fullHash = `0x${hashHex}`;

@@ -67,6 +67,15 @@ export async function registerRoutes(
               action: "CANCEL_SWAP",
               response: "Operação cancelada. Eu ainda sou o mais forte."
             });
+          } else {
+            // Invalid response during confirmation - ask again while keeping state
+            return res.json({
+              action: "PROPOSE_SWAP",
+              fromToken: pendingSwap.fromToken,
+              toToken: pendingSwap.toToken,
+              amount: pendingSwap.amount,
+              response: "Não entendi sua resposta. Você quer confirmar a troca? (Diga Sim ou Não)"
+            });
           }
         }
 

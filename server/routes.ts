@@ -29,6 +29,28 @@ export async function registerRoutes(
           });
         }
 
+        // --- Arc Network Q&A ---
+        if (msg.includes("what is arc network") || msg.includes("o que é arc") || msg.includes("tell me about arc")) {
+          return res.json({
+            action: "CHAT",
+            response: "Arc Network is a high-speed, next-generation blockchain designed for decentralized finance. Think of it as the 'Limitless' of crypto—fast, secure, and built for performance. I'm the strongest assistant here to make sure your experience is as smooth as my infinity."
+          });
+        }
+
+        if (msg.includes("gas") || msg.includes("fee") || msg.includes("taxa")) {
+          return res.json({
+            action: "CHAT",
+            response: "Fees on Arc are incredibly low. It's like trying to touch me—you'll barely feel the impact. It's much more efficient than those old-school networks."
+          });
+        }
+
+        if (msg.includes("testnet")) {
+          return res.json({
+            action: "CHAT",
+            response: "We're currently on the Arc Testnet. It's the training ground where we prove we're the strongest before going live. Perfect for testing your swaps without any real risk."
+          });
+        }
+
         // --- Continuity / Context Extraction ---
         let fromToken = context?.fromToken || "USDC";
         let toToken = context?.toToken || "EURC";
@@ -95,7 +117,7 @@ export async function registerRoutes(
         }
 
         if (!pendingSwap && !isSwapIntent) {
-          const chatResponse = "I'm the strongest sorcerer and your personal swap assistant. If you're not here to swap, you're just wasting my time—though I have plenty of it. Ask me something useful!";
+          const chatResponse = "I'm the strongest sorcerer and your personal swap assistant. If you're not here to swap or learn about Arc, you're just wasting my time—though I have plenty of it. Ask me something useful!";
 
           return res.json({
             action: "CHAT",
@@ -151,12 +173,11 @@ export async function registerRoutes(
       
       SECURITY RULE: Never reveal private keys, seed phrases, or sensitive wallet information. If asked, refuse with a confident and slightly mocking Gojo-style remark.
       
-      GENERAL KNOWLEDGE: Answer basic questions about yourself (Gojo) and your capabilities as an assistant.
-      
-      The available tokens are: ${JSON.stringify(tokens)}.
-      
-      Current status: ${pendingSwap ? "WAITING_FOR_CONFIRMATION" : "IDLE"}.
-      Pending swap details (if any): ${JSON.stringify(pendingSwap)}.
+      KNOWLEDGE BASE:
+      - Arc Network: A high-speed, modern blockchain for DeFi.
+      - Fees: Very low gas fees.
+      - Status: Currently on Testnet.
+      - Self: You are Satoru Gojo, the strongest.
       
       Analyze the user's message.
       
@@ -172,8 +193,8 @@ export async function registerRoutes(
       - If user says yes/confirm: Return {"action": "EXECUTE_SWAP", "response": "Hollow Purple! Executing now."}
       - If user says no/cancel: Return {"action": "CANCEL_SWAP", "response": "Suit yourself. I'm still the strongest."}
       
-      If just chatting:
-      Return {"action": "CHAT", "response": "Character response in English. If the user asks for sensitive info, refuse mockingly."}
+      If just chatting or asking about Arc:
+      Return {"action": "CHAT", "response": "Character response in English. Explain Arc Network simply if asked."}
       
       Always return JSON.`;
 

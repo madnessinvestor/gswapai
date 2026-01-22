@@ -31,7 +31,17 @@ export async function registerRoutes(
 
         // --- NEW: Better Intent Detection for Fallback Mode ---
         const isSwapIntent = msg.includes("swap") || msg.includes("trocar") || msg.includes("troca") || msg.includes("quero") || /\d+/.test(msg);
+        const hasAmount = /(\d+(?:\.\d+)?)/.test(msg);
         
+        if (!pendingSwap && isSwapIntent && !hasAmount) {
+          return res.json({
+            action: "CHAT",
+            response: isPt 
+              ? "Claro! Eu sou o mais forte, posso trocar qualquer coisa. Quanto você quer trocar e de qual token para qual? (Ex: 10 USDC para EURC)"
+              : "Sure! I'm the strongest, I can swap anything. How much do you want to swap and from which token to which? (Ex: 10 USDC to EURC)"
+          });
+        }
+
         if (!pendingSwap && !isSwapIntent) {
           // It's just a chat message, not a swap request
           const chatResponse = isPt
@@ -92,10 +102,12 @@ export async function registerRoutes(
               action: "EXECUTE_SWAP",
               response: isPt ? "Hollow Purple! Executando a troca agora. Nada pode me parar." : "Hollow Purple! Executing the swap now. Nothing can stop me."
             });
-          } else if (msg.includes("não") || msg.includes("no") || msg.includes("cancelar") || msg.includes("cancel")) {
+          } else if (msg.includes("não") || msg.includes("no") || msg.includes("cancelar") || msg.includes("cancel") || msg.includes("outro valor")) {
             return res.json({
               action: "CANCEL_SWAP",
-              response: isPt ? "Operação cancelada. Eu ainda sou o mais forte, de qualquer forma." : "Operation cancelled. I'm still the strongest, anyway."
+              response: isPt 
+                ? "Entendi, mudei de ideia? Sem problemas. O que você quer fazer então? Diga o novo valor ou token."
+                : "Got it, changed your mind? No problem. What do you want to do then? Tell me the new amount or token."
             });
           } else {
             // Invalid response during confirmation - ask again while keeping state

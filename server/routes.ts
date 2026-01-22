@@ -25,7 +25,7 @@ export async function registerRoutes(
         if (!isPt && !isEn) {
           return res.json({
             action: "CHAT",
-            response: "I only speak English or Portuguese. / Somente falo em Inglês ou Português."
+            response: "I only speak English or Portuguese. No exceptions. / Somente falo em Inglês ou Português. Sem exceções."
           });
         }
 
@@ -59,40 +59,52 @@ export async function registerRoutes(
           const rate = fromToken === "USDC" ? 0.085165 : 11.7419;
           const estimatedAmount = (parseFloat(amount) * rate).toFixed(6);
 
+          const response = isPt 
+            ? `Entendido! Você quer trocar ${amount} ${fromToken} por aproximadamente ${estimatedAmount} ${toToken}. Relaxa, eu sou o mais forte. Confirmar? (Sim/Não)`
+            : `Got it! You want to swap ${amount} ${fromToken} for about ${estimatedAmount} ${toToken}. Don't worry, I'm the strongest. Confirm? (Yes/No)`;
+
           return res.json({
             action: "PROPOSE_SWAP",
             fromToken,
             toToken,
             amount,
-            response: `Entendido! Você quer trocar ${amount} ${fromToken} por aproximadamente ${estimatedAmount} ${toToken}. (Nota: AI em modo de fallback). Confirmar? (Sim/Não)`
+            response
           });
         } else {
           // Handle confirmation
           if (msg.includes("sim") || msg.includes("yes") || msg.includes("confirmar") || msg.includes("confirm")) {
             return res.json({
               action: "EXECUTE_SWAP",
-              response: "Hollow Purple! Executando a troca agora."
+              response: isPt ? "Hollow Purple! Executando a troca agora. Nada pode me parar." : "Hollow Purple! Executing the swap now. Nothing can stop me."
             });
           } else if (msg.includes("não") || msg.includes("no") || msg.includes("cancelar") || msg.includes("cancel")) {
             return res.json({
               action: "CANCEL_SWAP",
-              response: "Operação cancelada. Eu ainda sou o mais forte."
+              response: isPt ? "Operação cancelada. Eu ainda sou o mais forte, de qualquer forma." : "Operation cancelled. I'm still the strongest, anyway."
             });
           } else {
             // Invalid response during confirmation - ask again while keeping state
+            const response = isPt
+              ? "Não entendi sua resposta. Você quer confirmar a troca? (Diga Sim ou Não). Não me faça esperar."
+              : "I didn't catch that. Do you want to confirm the swap? (Say Yes or No). Don't keep me waiting.";
+            
             return res.json({
               action: "PROPOSE_SWAP",
               fromToken: pendingSwap.fromToken,
               toToken: pendingSwap.toToken,
               amount: pendingSwap.amount,
-              response: "Não entendi sua resposta. Você quer confirmar a troca? (Diga Sim ou Não)"
+              response
             });
           }
         }
 
+        const chatResponse = isPt
+          ? "Eu sou Gojo Satoru. No momento estou operando em modo básico, mas ainda sou o mais forte! Como posso ajudar com suas trocas?"
+          : "I am Gojo Satoru. I'm operating in basic mode right now, but I'm still the strongest! How can I help with your swaps?";
+
         return res.json({
           action: "CHAT",
-          response: "Eu sou Gojo Satoru. No momento estou operando em modo básico, mas ainda posso te ajudar com trocas se você for específico!"
+          response: chatResponse
         });
       }
 

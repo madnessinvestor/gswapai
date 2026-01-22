@@ -1331,6 +1331,73 @@ export default function SwapInterface() {
       setIsSwapping(true);
       try {
         const amountIn = parseUnits(amount, fromTokenObj.decimals);
+
+        // --- NEW: Approval Check Logic ---
+        if (!fromTokenObj.isNative) {
+          const allowanceData = encodeFunctionData({
+            abi: ERC20_ABI,
+            functionName: 'allowance',
+            args: [activeAccount as `0x${string}`, POOL_ADDRESS]
+          });
+
+          const allowanceResult = await (client as any).request({
+            method: 'eth_call',
+            params: [{
+              to: fromTokenObj.address as `0x${string}`,
+              data: allowanceData
+            }, 'latest']
+          });
+
+          const currentAllowance = BigInt(allowanceResult);
+          
+          if (currentAllowance < amountIn) {
+            setIsApproving(true);
+            toast({
+              title: "Approval Required",
+              description: `Approving ${fromTokenObj.symbol} for swap...`,
+            });
+
+            const approveData = encodeFunctionData({
+              abi: ERC20_ABI,
+              functionName: 'approve',
+              args: [POOL_ADDRESS, BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")]
+            });
+
+            const approveHash = await client.sendTransaction({
+              account: activeAccount as `0x${string}`,
+              to: fromTokenObj.address as `0x${string}`,
+              data: approveData,
+              chain: arcTestnet
+            });
+
+            toast({ title: "Approval Submitted", description: "Waiting for confirmation..." });
+
+            // Simple polling for approval
+            let approved = false;
+            for (let i = 0; i < 30; i++) {
+              await new Promise(r => setTimeout(r, 2000));
+              const res = await (client as any).request({
+                method: 'eth_call',
+                params: [{
+                  to: fromTokenObj.address as `0x${string}`,
+                  data: allowanceData
+                }, 'latest']
+              });
+              if (BigInt(res) >= amountIn) {
+                approved = true;
+                break;
+              }
+            }
+
+            setIsApproving(false);
+            if (!approved) {
+              throw new Error("Approval timed out or failed.");
+            }
+            toast({ title: "Approved", description: "Proceeding with swap..." });
+          }
+        }
+        // --- End of Approval Logic ---
+
         const amountOutMin = BigInt(0);
         
         // ARC Network Logic

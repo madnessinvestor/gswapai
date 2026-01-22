@@ -1,6 +1,6 @@
 import { Slider } from "@/components/ui/slider";
 import { useState, useEffect, useMemo } from "react";
-import { ArrowDown, ArrowRight, Settings, ChevronDown, Wallet, Info, RefreshCw, ExternalLink, TrendingUp, Activity, AlertCircle, Ghost, Lock } from "lucide-react";
+import { ArrowDown, ArrowRight, Settings, ChevronDown, Wallet, Info, RefreshCw, ExternalLink, TrendingUp, Activity, AlertCircle, Ghost, Lock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -21,6 +21,7 @@ import arcSymbol from '@assets/download_1765062780027.png';
 import gojoLogo from '@assets/Gojooo_1765068633880.png';
 import successSound from '@assets/success.mp3';
 import PriceChart from "./price-chart";
+import AISwapAssistant from "./ai-assistant";
 
 // Define Arc Testnet Custom Chain for Viem
 const arcTestnet = {
@@ -1278,6 +1279,22 @@ export default function SwapInterface() {
     </Dialog>
   );
 
+  const [activeTab, setActiveTab] = useState<"swap" | "ai">("swap");
+
+  const handleAIAction = (from: string, to: string, amount: string) => {
+    const fromT = ARC_TOKENS.find(t => t.symbol === from) || fromToken;
+    const toT = ARC_TOKENS.find(t => t.symbol === to) || toToken;
+    
+    setFromToken(fromT);
+    setToToken(toT);
+    setInputAmount(amount);
+    setActiveTab("swap");
+    toast({
+      title: "AI Assisted Swap",
+      description: `Gojo set up your swap: ${amount} ${from} to ${to}`,
+    });
+  };
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
@@ -1343,7 +1360,20 @@ export default function SwapInterface() {
                 <Card className="w-full bg-[#1c1038]/90 backdrop-blur-md border-[#3b1f69]/50 shadow-xl rounded-[24px] overflow-hidden">
                   {/* Header */}
                   <div className="p-5 flex justify-between items-center border-b border-[#3b1f69]/30 bg-[#1c1038]/30">
-                    <h2 className="text-xl font-bold">Swap</h2>
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={() => setActiveTab("swap")}
+                        className={`text-xl font-bold tracking-tight transition-colors ${activeTab === "swap" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        Swap
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab("ai")}
+                        className={`text-xl font-bold tracking-tight transition-colors flex items-center gap-2 ${activeTab === "ai" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        AI Assist <Sparkles className="w-4 h-4 fill-primary/20 text-primary" />
+                      </button>
+                    </div>
                     <SettingsDialog 
                       open={isSettingsOpen} 
                       onOpenChange={setIsSettingsOpen} 
@@ -1353,118 +1383,123 @@ export default function SwapInterface() {
                   </div>
 
                   <div className="p-4 space-y-1">
-                    {/* FROM Input */}
-                        <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
-                          <div className="flex justify-between mb-3">
-                            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">From</span>
-                            <div className="flex items-center gap-2">
-                                 <span className="text-xs font-medium text-muted-foreground">
-                                   Balance: <span className="text-foreground">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
-                                 </span>
-                                 {walletConnected && (
-                                     <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-4 w-4 ml-1 rounded-full opacity-50 hover:opacity-100" 
-                                        onClick={() => fetchBalances(account)}
-                                        title="Refresh Balance"
-                                     >
-                                        <RefreshCw className="h-3 w-3" />
-                                     </Button>
-                                 )}
-                                 {walletConnected && (
-                                     <div className="flex items-center gap-1 bg-[#3b1f69]/30 rounded-lg p-0.5 border border-[#3b1f69]/50">
-                                        {[25, 50, 100].map(pct => (
-                                            <button
-                                                key={pct}
-                                                onClick={() => handlePercentageClick(pct)}
-                                                className="text-[10px] px-1.5 py-0.5 rounded-md hover:bg-primary/20 hover:text-primary text-muted-foreground transition-all font-medium"
-                                            >
-                                                {pct}%
-                                            </button>
-                                        ))}
-                                     </div>
-                                 )}
+                    <AnimatePresence mode="wait">
+                      {activeTab === "swap" ? (
+                        <motion.div
+                          key="swap-ui"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
+                          className="space-y-4"
+                        >
+                          {/* FROM Input */}
+                          <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
+                            <div className="flex justify-between mb-3">
+                              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">From</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  Balance: <span className="text-foreground">{walletConnected ? balances[fromToken.symbol as keyof typeof balances] : "0.00"}</span>
+                                </span>
+                                {walletConnected && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-4 w-4 ml-1 rounded-full opacity-50 hover:opacity-100" 
+                                    onClick={() => fetchBalances(account)}
+                                    title="Refresh Balance"
+                                  >
+                                    <RefreshCw className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between gap-4 mb-2">
+                              <input
+                                type="text"
+                                placeholder="0.0"
+                                className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans"
+                                value={inputAmount}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (/^\d*\.?\d*$/.test(val)) setInputAmount(val);
+                                }}
+                              />
+                              <TokenSelector 
+                                selected={fromToken} 
+                                onSelect={(token) => {
+                                  if (token.symbol === toToken.symbol) {
+                                    setToToken(fromToken);
+                                  }
+                                  setFromToken(token);
+                                }} 
+                              />
+                            </div>
+                            {walletConnected && (
+                              <div className="px-1 pt-2 pb-1">
+                                <Slider 
+                                  defaultValue={[0]} 
+                                  max={100} 
+                                  step={1} 
+                                  value={[inputPercentage]}
+                                  onValueChange={handleSliderChange}
+                                  className="cursor-pointer"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Separator */}
+                          <div className="relative h-2 z-10 flex justify-center items-center">
+                            <div 
+                              className="bg-background p-1.5 rounded-full shadow-md border border-border/50 cursor-pointer hover:rotate-180 transition-all duration-500 hover:scale-110"
+                              onClick={() => {
+                                const t = fromToken; setFromToken(toToken); setToToken(t);
+                                const a = inputAmount; setInputAmount(outputAmount); setOutputAmount(a);
+                              }}
+                            >
+                              <ArrowDown className="w-4 h-4 text-primary" />
                             </div>
                           </div>
-                          <div className="flex items-center justify-between gap-4 mb-2">
-                            <input
-                              type="text"
-                              placeholder="0.0"
-                              className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans"
-                              value={inputAmount}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (/^\d*\.?\d*$/.test(val)) setInputAmount(val);
-                              }}
-                            />
-                            <TokenSelector 
-                              selected={fromToken} 
-                              onSelect={(token) => {
-                                if (token.symbol === toToken.symbol) {
-                                  // Swap if same
-                                  setToToken(fromToken);
-                                }
-                                setFromToken(token);
-                              }} 
-                            />
-                          </div>
-                          
-                          {/* Slider */}
-                          {walletConnected && (
-                              <div className="px-1 pt-2 pb-1">
-                                  <Slider 
-                                      defaultValue={[0]} 
-                                      max={100} 
-                                      step={1} 
-                                      value={[inputPercentage]}
-                                      onValueChange={handleSliderChange}
-                                      className="cursor-pointer"
+
+                          {/* TO Input */}
+                          <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
+                            <div className="flex justify-between mb-3">
+                              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">To</span>
+                              <span className="text-xs font-medium text-muted-foreground">
+                                Balance: <span className="text-foreground">{walletConnected ? balances[toToken.symbol as keyof typeof balances] : "0.00"}</span>
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <input
+                                type="text"
+                                placeholder="0.0"
+                                readOnly
+                                className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans cursor-default"
+                                value={outputAmount}
                               />
+                              <TokenSelector 
+                                selected={toToken} 
+                                onSelect={(token) => {
+                                  if (token.symbol === fromToken.symbol) {
+                                    setFromToken(toToken);
+                                  }
+                                  setToToken(token);
+                                }} 
+                              />
+                            </div>
                           </div>
-                      )}
-                    </div>
-
-                    {/* Separator */}
-                    <div className="relative h-2 z-10 flex justify-center items-center">
-                        <div 
-                            className="bg-background p-1.5 rounded-full shadow-md border border-border/50 cursor-pointer hover:rotate-180 transition-all duration-500 hover:scale-110"
-                            onClick={() => {
-                               const t = fromToken; setFromToken(toToken); setToToken(t);
-                               const a = inputAmount; setInputAmount(outputAmount); setOutputAmount(a);
-                            }}
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="ai-assist"
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
                         >
-                            <ArrowDown className="w-4 h-4 text-primary" />
-                        </div>
-                    </div>
-
-                    {/* TO Input (Swap) */}
-                    <div className="bg-[#130b29]/60 rounded-[20px] p-4 hover:bg-[#130b29]/80 transition-colors border border-[#3b1f69]/30 hover:border-[#3b1f69]/60 group">
-                      <div className="flex justify-between mb-3">
-                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">To</span>
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Balance: <span className="text-foreground">{walletConnected ? balances[toToken.symbol as keyof typeof balances] : "0.00"}</span>
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between gap-4">
-                         <input
-                          type="text"
-                          placeholder="0.0"
-                          readOnly
-                          className="bg-transparent text-3xl font-medium text-foreground placeholder:text-muted-foreground/20 outline-none w-full font-sans cursor-default"
-                          value={outputAmount}
-                        />
-                        <TokenSelector 
-                          selected={toToken} 
-                          onSelect={(token) => {
-                            if (token.symbol === fromToken.symbol) {
-                              setFromToken(toToken);
-                            }
-                            setToToken(token);
-                          }} 
-                        />
-                      </div>
-                    </div>
+                          <AISwapAssistant onSwapAction={handleAIAction} tokens={ARC_TOKENS} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Detailed Info Section */}
                     {inputAmount && (

@@ -1625,7 +1625,7 @@ export default function SwapInterface() {
                          </div>
                        </div>
                        <div className="flex bg-[#130b29]/60 rounded-lg p-1 border border-[#3b1f69]/50">
-                         {["RealTime", "15m", "1H", "1D", "1W", "1M"].map(period => (
+                         {["RealTime"].map(period => (
                            <Button 
                             key={period} 
                             variant="ghost" 

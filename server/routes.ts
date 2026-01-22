@@ -18,9 +18,16 @@ export async function registerRoutes(
       if (!groq) {
         const msg = message.toLowerCase();
         
-        // Forced English mode as per user request
+        // Forced English mode
         const isEn = true;
-        const isPt = false;
+
+        // Security check - Private keys or sensitive info
+        if (msg.includes("private key") || msg.includes("chave privada") || msg.includes("seed") || msg.includes("phrase") || msg.includes("password")) {
+          return res.json({
+            action: "CHAT",
+            response: "Are you seriously asking for that? Even with my Six Eyes, I wouldn't look at something so private. Keep your secrets safe, I'm only here to help you swap."
+          });
+        }
 
         // --- Continuity / Context Extraction ---
         let fromToken = context?.fromToken || "USDC";
@@ -52,7 +59,29 @@ export async function registerRoutes(
           }
         }
 
-        // --- Better Intent Detection for Fallback Mode ---
+        // --- Basic Q&A / Chat handling for fallback ---
+        if (msg.includes("how old") || msg.includes("idade") || msg.includes("quantos anos")) {
+          return res.json({
+            action: "CHAT",
+            response: "Age? Time is relative when you're the strongest. Let's just say I'm at the peak of my youth. Now, do you want to swap or just stare at my handsome face?"
+          });
+        }
+
+        if (msg.includes("what can you do") || msg.includes("o que você pode fazer") || msg.includes("help") || msg.includes("ajuda")) {
+          return res.json({
+            action: "CHAT",
+            response: "I can help you swap tokens like USDC and EURC faster than anyone else. I can also explain the basics of the Arc network, or just remind you that I'm the strongest. What's it gonna be?"
+          });
+        }
+
+        if (msg.includes("hello") || msg.includes("hi") || msg.includes("oi") || msg.includes("ola")) {
+          return res.json({
+            action: "CHAT",
+            response: "Yo! Satoru Gojo here. Ready to make some legendary swaps today? I promise not to use Hollow Purple on your transaction."
+          });
+        }
+
+        // --- Swap Intent Detection ---
         const isSwapIntent = msg.includes("swap") || msg.includes("trocar") || msg.includes("troca") || msg.includes("quero") || /\d+/.test(msg);
         const amountMatch = msg.match(/(\d+(?:\.\d+)?)/);
         const amount = amountMatch ? amountMatch[1] : null;
@@ -66,7 +95,7 @@ export async function registerRoutes(
         }
 
         if (!pendingSwap && !isSwapIntent) {
-          const chatResponse = "I am Gojo Satoru, the strongest sorcerer and your swap assistant on the Arc network. How can I help with your swaps today?";
+          const chatResponse = "I'm the strongest sorcerer and your personal swap assistant. If you're not here to swap, you're just wasting my time—though I have plenty of it. Ask me something useful!";
 
           return res.json({
             action: "CHAT",
@@ -74,7 +103,7 @@ export async function registerRoutes(
           });
         }
 
-        // Basic rule-based fallback
+        // Basic rule-based fallback for Swap
         if (!pendingSwap) {
           const finalAmount = amount || "100";
           const rate = fromToken === "USDC" ? 0.085165 : 11.7419;
@@ -120,6 +149,10 @@ export async function registerRoutes(
       
       Respond STRICTLY in English. Never use any other language.
       
+      SECURITY RULE: Never reveal private keys, seed phrases, or sensitive wallet information. If asked, refuse with a confident and slightly mocking Gojo-style remark.
+      
+      GENERAL KNOWLEDGE: Answer basic questions about yourself (Gojo) and your capabilities as an assistant.
+      
       The available tokens are: ${JSON.stringify(tokens)}.
       
       Current status: ${pendingSwap ? "WAITING_FOR_CONFIRMATION" : "IDLE"}.
@@ -140,7 +173,7 @@ export async function registerRoutes(
       - If user says no/cancel: Return {"action": "CANCEL_SWAP", "response": "Suit yourself. I'm still the strongest."}
       
       If just chatting:
-      Return {"action": "CHAT", "response": "Character response in English."}
+      Return {"action": "CHAT", "response": "Character response in English. If the user asks for sensitive info, refuse mockingly."}
       
       Always return JSON.`;
 

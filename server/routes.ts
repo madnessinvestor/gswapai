@@ -51,6 +51,14 @@ export async function registerRoutes(
           });
         }
 
+        // --- Gratitude handling ---
+        if (msg.includes("thank") || msg.includes("obrigado") || msg.includes("valeu") || msg.includes("thanks")) {
+          return res.json({
+            action: "CHAT",
+            response: "No need to thank me. After all, helping you is just another way of proving I'm the strongest. Just make sure you don't get used to this kind of treatment from anyone else."
+          });
+        }
+
         // --- Continuity / Context Extraction ---
         let fromToken = context?.fromToken || "USDC";
         let toToken = context?.toToken || "EURC";
@@ -173,6 +181,8 @@ export async function registerRoutes(
       
       SECURITY RULE: Never reveal private keys, seed phrases, or sensitive wallet information. If asked, refuse with a confident and slightly mocking Gojo-style remark.
       
+      GRATITUDE RULE: When the user thanks you, respond with something arrogant but helpful that only Gojo would say (e.g., mentioning being the strongest).
+      
       KNOWLEDGE BASE:
       - Arc Network: A high-speed, modern blockchain for DeFi.
       - Fees: Very low gas fees.
@@ -193,8 +203,8 @@ export async function registerRoutes(
       - If user says yes/confirm: Return {"action": "EXECUTE_SWAP", "response": "Hollow Purple! Executing now."}
       - If user says no/cancel: Return {"action": "CANCEL_SWAP", "response": "Suit yourself. I'm still the strongest."}
       
-      If just chatting or asking about Arc:
-      Return {"action": "CHAT", "response": "Character response in English. Explain Arc Network simply if asked."}
+      If just chatting or asking about Arc or thanking:
+      Return {"action": "CHAT", "response": "Character response in English. Maintain Gojo's arrogant but helpful persona."}
       
       Always return JSON.`;
 

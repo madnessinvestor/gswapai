@@ -488,6 +488,35 @@ export default function SwapInterface() {
   // The price is now driven by the PriceChart component via callback
   // which ensures visual synchronization.
   
+  // Fetch Live Exchange Rate from Pool
+  useEffect(() => {
+    const fetchRate = async () => {
+      try {
+        const publicClient = createPublicClient({
+          chain: arcTestnet as any,
+          transport: http()
+        });
+        
+        // 1 USDC = ? EURC
+        const amounts = await publicClient.readContract({
+          address: "0x284C5Afc100ad14a458255075324fA0A9dfd66b1" as `0x${string}`,
+          abi: ROUTER_ABI,
+          functionName: 'getAmountsOut',
+          args: [parseUnits("1", 6), [USDC_ADDRESS as `0x${string}`, "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`]]
+        }) as bigint[];
+        
+        const rate = parseFloat(formatUnits(amounts[1], 6));
+        if (rate > 0) setExchangeRate(rate);
+      } catch (e) {
+        console.error("Failed to fetch on-chain rate:", e);
+      }
+    };
+
+    fetchRate();
+    const interval = setInterval(fetchRate, 30000); // Update every 30s
+    return () => clearInterval(interval);
+  }, []);
+
   const handlePriceUpdate = (price: number) => {
     // Only update if the price is significantly different to avoid flickering
     // and ensure it's a valid positive number

@@ -29,6 +29,14 @@ export async function registerRoutes(
           });
         }
 
+        // --- Capabilities Check (Bridges, etc.) ---
+        if (msg.includes("bridge") || msg.includes("ponte") || msg.includes("cross-chain") || msg.includes("cross chain")) {
+          return res.json({
+            action: "CHAT",
+            response: "Bridges? Oh, I could definitely handle that. I'm the strongest, after all. But for now, I'm not authorized to use that much power. Let's stick to swaps, shall we? It's much more elegant."
+          });
+        }
+
         // --- Arc Network Q&A ---
         if (msg.includes("what is arc network") || msg.includes("o que é arc") || msg.includes("tell me about arc")) {
           return res.json({
@@ -181,7 +189,9 @@ export async function registerRoutes(
       
       SECURITY RULE: Never reveal private keys, seed phrases, or sensitive wallet information. If asked, refuse with a confident and slightly mocking Gojo-style remark.
       
-      GRATITUDE RULE: When the user thanks you, respond with something arrogant but helpful that only Gojo would say (e.g., mentioning being the strongest).
+      GRATITUDE RULE: When the user thanks you, respond with something arrogant but helpful that only Gojo would say.
+      
+      CAPABILITIES RULE: If asked about features you don't have (like bridges), state that you are definitely powerful enough to do it, but you're not currently authorized or allowed to use that much power. Maintain the Gojo persona.
       
       KNOWLEDGE BASE:
       - Arc Network: A high-speed, modern blockchain for DeFi.
@@ -197,13 +207,13 @@ export async function registerRoutes(
       2. "fromToken": The symbol.
       3. "toToken": The symbol.
       4. "amount": The amount string.
-      5. "response": A witty Gojo summary of the request in English, INCLUDING the estimated output value based on current rates (If from USDC to EURC: estimatedAmount = amount * 0.085165. If from EURC to USDC: estimatedAmount = amount * 11.7419), ex: "You want to swap [amount] [fromToken] for about [estimatedAmount] [toToken]. Confirm? (Yes/No)"
+      5. "response": A witty Gojo summary of the request in English, INCLUDING the estimated output value based on current rates.
       
       If status is WAITING_FOR_CONFIRMATION:
       - If user says yes/confirm: Return {"action": "EXECUTE_SWAP", "response": "Hollow Purple! Executing now."}
       - If user says no/cancel: Return {"action": "CANCEL_SWAP", "response": "Suit yourself. I'm still the strongest."}
       
-      If just chatting or asking about Arc or thanking:
+      If just chatting or asking about Arc or thanking or asking about unauthorized features:
       Return {"action": "CHAT", "response": "Character response in English. Maintain Gojo's arrogant but helpful persona."}
       
       Always return JSON.`;
@@ -223,7 +233,7 @@ export async function registerRoutes(
       const response = JSON.parse(completion.choices[0].message.content || "{}");
       res.json(response);
     } catch (error: any) {
-      console.error("AI Swap Error:", error);
+      console.error("AI Error:", error);
       res.status(500).json({ error: "Failed to process AI request" });
     }
   });

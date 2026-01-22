@@ -210,6 +210,11 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
             price = 1 / price;
         }
 
+        // Notify parent component of the REAL on-chain price
+        if (onPriceUpdate && price > 0) {
+            onPriceUpdate(price);
+        }
+
         // Handle case where price from contract is far from market (Arc testnet volatility)
         // If price is > 5, it's likely the old 7.56 rate or similar
         // Forcing a realistic mock for demo purposes if contract price is not correct

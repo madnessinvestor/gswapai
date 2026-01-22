@@ -479,6 +479,14 @@ export default function SwapInterface() {
   // The price is now driven by the PriceChart component via callback
   // which ensures visual synchronization.
   
+  const handlePriceUpdate = (price: number) => {
+    // Only update if the price is significantly different to avoid flickering
+    // and ensure it's a valid positive number
+    if (price > 0 && Math.abs(price - exchangeRate) > 0.000001) {
+      setExchangeRate(price);
+    }
+  };
+
   // Simulate Global Volume Ticker
   useEffect(() => {
     const interval = setInterval(() => {
@@ -1637,11 +1645,7 @@ export default function SwapInterface() {
                             fromSymbol={fromToken.symbol} 
                             toSymbol={toToken.symbol}
                             currentRate={exchangeRate}
-                            onPriceUpdate={(price) => {
-                                // Update Exchange Rate directly from Chart
-                                // This ensures the UI Rate and Chart are perfectly synced
-                                setExchangeRate(price);
-                            }}
+                            onPriceUpdate={handlePriceUpdate}
                         />
                      </div>
                 </Card>

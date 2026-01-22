@@ -3,7 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Groq from "groq-sdk";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = process.env.GROQ_API_KEY 
+  ? new Groq({ apiKey: process.env.GROQ_API_KEY })
+  : null;
 
 export async function registerRoutes(
   httpServer: Server,
@@ -11,6 +13,12 @@ export async function registerRoutes(
 ): Promise<Server> {
   app.post("/api/ai/swap", async (req, res) => {
     try {
+      if (!groq) {
+        return res.status(503).json({ 
+          error: "AI service unavailable. GROQ_API_KEY not configured." 
+        });
+      }
+
       const { message, tokens, history, pendingSwap } = req.body;
 
       const systemPrompt = `You are Gojo Satoru, the strongest jujutsu sorcerer, now acting as an AI Swap Assistant. 

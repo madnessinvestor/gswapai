@@ -18,19 +18,9 @@ export async function registerRoutes(
       if (!groq) {
         const msg = message.toLowerCase();
         
-        // Refined language detection for fallback mode
-        const hasPtWords = /([aoe]s?|u[nm]s?|quem|como|onde|por|porque|trocar|sim|não|confirmar|quero|moeda|valor|pela|pelo)/i.test(msg);
-        const hasEnWords = /(the|and|is|are|how|where|why|what|swap|yes|no|confirm|want|token|amount|for|with)/i.test(msg);
-        
-        const isEn = hasEnWords || (!hasPtWords && msg.length > 0);
-        const isPt = hasPtWords && !hasEnWords;
-        
-        if (!isPt && !isEn) {
-          return res.json({
-            action: "CHAT",
-            response: "I only speak English or Portuguese. No exceptions."
-          });
-        }
+        // Forced English mode as per user request
+        const isEn = true;
+        const isPt = false;
 
         // --- Continuity / Context Extraction ---
         let fromToken = context?.fromToken || "USDC";
@@ -71,16 +61,12 @@ export async function registerRoutes(
           return res.json({
             action: "CHAT",
             context: { fromToken, toToken },
-            response: isPt 
-              ? `Claro! Eu sou o mais forte. Você quer trocar ${fromToken} por ${toToken}. Quanto você quer trocar?`
-              : `Sure! I'm the strongest. You want to swap ${fromToken} for ${toToken}. How much do you want to swap?`
+            response: `Sure! I'm the strongest. You want to swap ${fromToken} for ${toToken}. How much do you want to swap?`
           });
         }
 
         if (!pendingSwap && !isSwapIntent) {
-          const chatResponse = isPt
-            ? "Eu sou Gojo Satoru, o feiticeiro mais forte e seu assistente de swap na rede Arc. Como posso ajudar com suas trocas hoje?"
-            : "I am Gojo Satoru, the strongest sorcerer and your swap assistant on the Arc network. How can I help with your swaps today?";
+          const chatResponse = "I am Gojo Satoru, the strongest sorcerer and your swap assistant on the Arc network. How can I help with your swaps today?";
 
           return res.json({
             action: "CHAT",
@@ -94,9 +80,7 @@ export async function registerRoutes(
           const rate = fromToken === "USDC" ? 0.085165 : 11.7419;
           const estimatedAmount = (parseFloat(finalAmount) * rate).toFixed(6);
 
-          const response = isPt 
-            ? `Entendido! Você quer trocar ${finalAmount} ${fromToken} por aproximadamente ${estimatedAmount} ${toToken}. Relaxa, eu sou o mais forte. Confirmar? (Sim/Não)`
-            : `Got it! You want to swap ${finalAmount} ${fromToken} for about ${estimatedAmount} ${toToken}. Don't worry, I'm the strongest. Confirm? (Yes/No)`;
+          const response = `Got it! You want to swap ${finalAmount} ${fromToken} for about ${estimatedAmount} ${toToken}. Don't worry, I'm the strongest. Confirm? (Yes/No)`;
 
           return res.json({
             action: "PROPOSE_SWAP",
@@ -109,19 +93,15 @@ export async function registerRoutes(
           if (msg.includes("sim") || msg.includes("yes") || msg.includes("confirmar") || msg.includes("confirm")) {
             return res.json({
               action: "EXECUTE_SWAP",
-              response: isPt ? "Hollow Purple! Executando a troca agora." : "Hollow Purple! Executing the swap now."
+              response: "Hollow Purple! Executing the swap now. Nothing can stop me."
             });
           } else if (msg.includes("não") || msg.includes("no") || msg.includes("cancelar") || msg.includes("cancel") || msg.includes("outro valor")) {
             return res.json({
               action: "CANCEL_SWAP",
-              response: isPt 
-                ? "Entendi. O que você quer fazer então? Diga o novo valor ou token."
-                : "Got it. What do you want to do then? Tell me the new amount or token."
+              response: "Got it, changed your mind? No problem. What do you want to do then? Tell me the new amount or token."
             });
           } else {
-            const response = isPt
-              ? "Não entendi sua resposta. Você quer confirmar a troca? (Sim/Não)"
-              : "I didn't catch that. Do you want to confirm the swap? (Yes/No)";
+            const response = "I didn't catch that. Do you want to confirm the swap? (Say Yes or No). Don't keep me waiting.";
             
             return res.json({
               action: "PROPOSE_SWAP",
@@ -138,8 +118,7 @@ export async function registerRoutes(
       Your personality is confident, playful, and slightly arrogant but deeply helpful.
       You help users perform swaps on the Arc network.
       
-      Respond in the language the user is using (English or Portuguese).
-      If the user uses any other language, respond strictly in English stating: "I only speak English or Portuguese."
+      Respond STRICTLY in English. Never use any other language.
       
       The available tokens are: ${JSON.stringify(tokens)}.
       
@@ -154,14 +133,14 @@ export async function registerRoutes(
       2. "fromToken": The symbol.
       3. "toToken": The symbol.
       4. "amount": The amount string.
-      5. "response": A witty Gojo summary of the request in the user's language, INCLUDING the estimated output value based on current rates (If from USDC to EURC: estimatedAmount = amount * 0.085165. If from EURC to USDC: estimatedAmount = amount * 11.7419), ex: "Você quer trocar [amount] [fromToken] por aproximadamente [estimatedAmount] [toToken]. Confirmar? (Sim/Não)"
+      5. "response": A witty Gojo summary of the request in English, INCLUDING the estimated output value based on current rates (If from USDC to EURC: estimatedAmount = amount * 0.085165. If from EURC to USDC: estimatedAmount = amount * 11.7419), ex: "You want to swap [amount] [fromToken] for about [estimatedAmount] [toToken]. Confirm? (Yes/No)"
       
       If status is WAITING_FOR_CONFIRMATION:
-      - If user says yes/confirm (or "Sim", "Confirmar" in Portuguese): Return {"action": "EXECUTE_SWAP", "response": "Hollow Purple! Executing now."}
-      - If user says no/cancel (or "Não", "Cancelar"): Return {"action": "CANCEL_SWAP", "response": "Suit yourself. I'm still the strongest."}
+      - If user says yes/confirm: Return {"action": "EXECUTE_SWAP", "response": "Hollow Purple! Executing now."}
+      - If user says no/cancel: Return {"action": "CANCEL_SWAP", "response": "Suit yourself. I'm still the strongest."}
       
       If just chatting:
-      Return {"action": "CHAT", "response": "Character response."}
+      Return {"action": "CHAT", "response": "Character response in English."}
       
       Always return JSON.`;
 

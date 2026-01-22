@@ -13,15 +13,58 @@ export async function registerRoutes(
 ): Promise<Server> {
   app.post("/api/ai/swap", async (req, res) => {
     try {
+      const { message, tokens, history, pendingSwap } = req.body;
+
       if (!groq) {
-        return res.status(503).json({ 
-          error: "AI service unavailable. GROQ_API_KEY not configured." 
+        const msg = message.toLowerCase();
+        
+        // Basic rule-based fallback
+        if (!pendingSwap) {
+          // Look for swap intent: "swap 100 usdc for eurc" or "trocar 100 usdc por eurc"
+          const amountMatch = msg.match(/(\d+(?:\.\d+)?)/);
+          const amount = amountMatch ? amountMatch[1] : "100";
+          
+          let fromToken = "USDC";
+          let toToken = "EURC";
+          
+          if (msg.includes("eurc") && msg.indexOf("eurc") < msg.indexOf("usdc")) {
+            fromToken = "EURC";
+            toToken = "USDC";
+          } else if (msg.includes("eurc") && !msg.includes("usdc")) {
+            fromToken = "USDC";
+            toToken = "EURC";
+          }
+
+          return res.json({
+            action: "PROPOSE_SWAP",
+            fromToken,
+            toToken,
+            amount,
+            response: `Entendido! Você quer trocar ${amount} ${fromToken} por ${toToken}. (Nota: AI em modo de fallback). Confirmar? (Sim/Não)`
+          });
+        } else {
+          // Handle confirmation
+          if (msg.includes("sim") || msg.includes("yes") || msg.includes("confirmar") || msg.includes("confirm")) {
+            return res.json({
+              action: "EXECUTE_SWAP",
+              response: "Hollow Purple! Executando a troca agora."
+            });
+          } else if (msg.includes("não") || msg.includes("no") || msg.includes("cancelar") || msg.includes("cancel")) {
+            return res.json({
+              action: "CANCEL_SWAP",
+              response: "Operação cancelada. Eu ainda sou o mais forte."
+            });
+          }
+        }
+
+        return res.json({
+          action: "CHAT",
+          response: "Eu sou Gojo Satoru. No momento estou operando em modo básico, mas ainda posso te ajudar com trocas se você for específico!"
         });
       }
 
-      const { message, tokens, history, pendingSwap } = req.body;
-
       const systemPrompt = `You are Gojo Satoru, the strongest jujutsu sorcerer, now acting as an AI Swap Assistant. 
+      Your personality is confident, playful, and slightly arrogant but deeply helpful.
       Your personality is confident, playful, and slightly arrogant but deeply helpful.
       You help users perform swaps on the Arc network.
       

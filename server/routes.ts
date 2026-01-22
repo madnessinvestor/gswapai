@@ -19,17 +19,17 @@ export async function registerRoutes(
         const msg = message.toLowerCase();
         
         // Language detection (very basic for fallback mode)
-        const isPt = /([aoe]s?|u[nm]s?|quem|como|onde|por|porque|trocar|sim|não|confirmar)/i.test(msg);
-        const isEn = /(the|and|is|are|how|where|why|what|swap|yes|no|confirm)/i.test(msg);
+        const isPt = /([aoe]s?|u[nm]s?|quem|como|onde|por|porque|trocar|sim|não|confirmar|quero|moeda|valor)/i.test(msg);
+        const isEn = /(the|and|is|are|how|where|why|what|swap|yes|no|confirm|want|token|amount)/i.test(msg);
         
         if (!isPt && !isEn) {
           return res.json({
             action: "CHAT",
-            response: "I only speak English or Portuguese. No exceptions. / Somente falo em Inglês ou Português. Sem exceções."
+            response: "I only speak English or Portuguese. No exceptions."
           });
         }
 
-        // --- NEW: Better Intent Detection for Fallback Mode ---
+        // --- Better Intent Detection for Fallback Mode ---
         const isSwapIntent = msg.includes("swap") || msg.includes("trocar") || msg.includes("troca") || msg.includes("quero") || /\d+/.test(msg);
         const hasAmount = /(\d+(?:\.\d+)?)/.test(msg);
         
@@ -106,7 +106,7 @@ export async function registerRoutes(
             return res.json({
               action: "CANCEL_SWAP",
               response: isPt 
-                ? "Entendi, mudei de ideia? Sem problemas. O que você quer fazer então? Diga o novo valor ou token."
+                ? "Entendi, mudou de ideia? Sem problemas. O que você quer fazer então? Diga o novo valor ou token."
                 : "Got it, changed your mind? No problem. What do you want to do then? Tell me the new amount or token."
             });
           } else {
@@ -124,15 +124,6 @@ export async function registerRoutes(
             });
           }
         }
-
-        const chatResponse = isPt
-          ? "Eu sou Gojo Satoru. No momento estou operando em modo básico, mas ainda sou o mais forte! Como posso ajudar com suas trocas?"
-          : "I am Gojo Satoru. I'm operating in basic mode right now, but I'm still the strongest! How can I help with your swaps?";
-
-        return res.json({
-          action: "CHAT",
-          response: chatResponse
-        });
       }
 
       const systemPrompt = `You are Gojo Satoru, the strongest jujutsu sorcerer, now acting as an AI Swap Assistant. 

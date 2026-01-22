@@ -212,9 +212,9 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
 
         // Handle case where price from contract is far from market (Arc testnet volatility)
         // If price is > 5, it's likely the old 7.56 rate or similar
-        // Forcing a realistic mock for demo purposes if contract price is not ~1.06
-        if (price > 2 || price < 0.1) {
-            price = fromSymbol === "USDC" ? 0.9412 : 1.0625;
+        // Forcing a realistic mock for demo purposes if contract price is not correct
+        if (price > 15 || price < 0.01) {
+            price = fromSymbol === "USDC" ? 0.085165 : 11.7419;
         }
         
         // Add extremely subtle noise to ensure the UI "updates" visually
@@ -227,9 +227,9 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
         console.warn("Error reading price (using mock for demo if needed):", e);
         // Fallback for demo if contract fails
         
-        let mockPrice = 1.0625;
+        let mockPrice = 11.7419;
         if (fromSymbol === "USDC") {
-            mockPrice = 0.9412;
+            mockPrice = 0.085165;
         }
         
         // Fallback noise - only for fallback
@@ -246,7 +246,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
 
     // We'll use a base price around 7.56 (or 1/7.56) to start generating history
     // Use effectiveCurrentRate if available as the base anchor
-    const basePrice = effectiveCurrentRate || (fromSymbol === "USDC" ? 0.9412 : 1.0625);
+    const basePrice = effectiveCurrentRate || (fromSymbol === "USDC" ? 0.085165 : 11.7419);
     
     // Pass effectiveCurrentRate as the target end price to ensure continuity
     const initialData = generateInitialData(basePrice, timeframe, effectiveCurrentRate);

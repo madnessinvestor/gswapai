@@ -12,7 +12,7 @@ interface AISwapAssistantProps {
 
 export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistantProps) {
   const [message, setMessage] = useState("");
-  const [chat, setChat] = useState<{ role: "user" | "ai"; content: string }[]>([]);
+  const [chat, setChat] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<any>(null);
 
@@ -51,9 +51,9 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
         setPendingSwap(null);
       }
 
-      setChat((prev) => [...prev, { role: "ai", content: data.response || "Something went wrong, but I'm still the strongest." }]);
+      setChat((prev) => [...prev, { role: "assistant", content: data.response || "Something went wrong, but I'm still the strongest." }]);
     } catch (error) {
-      setChat((prev) => [...prev, { role: "ai", content: "Even my Infinity has limits. Try again later." }]);
+      setChat((prev) => [...prev, { role: "assistant", content: "Even my Infinity has limits. Try again later." }]);
     } finally {
       setIsLoading(false);
     }

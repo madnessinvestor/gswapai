@@ -18,6 +18,17 @@ export async function registerRoutes(
       if (!groq) {
         const msg = message.toLowerCase();
         
+        // Language detection (very basic for fallback mode)
+        const isPt = /([aoe]s?|u[nm]s?|quem|como|onde|por|porque|trocar|sim|não|confirmar)/i.test(msg);
+        const isEn = /(the|and|is|are|how|where|why|what|swap|yes|no|confirm)/i.test(msg);
+        
+        if (!isPt && !isEn) {
+          return res.json({
+            action: "CHAT",
+            response: "I only speak English or Portuguese. / Somente falo em Inglês ou Português."
+          });
+        }
+
         // Basic rule-based fallback
         if (!pendingSwap) {
           // Look for swap intent: "swap 100 usdc for eurc" or "trocar 100 usdc por eurc"
@@ -89,7 +100,8 @@ export async function registerRoutes(
       Your personality is confident, playful, and slightly arrogant but deeply helpful.
       You help users perform swaps on the Arc network.
       
-      Respond in the language the user is using (e.g., Portuguese).
+      Respond in the language the user is using (English or Portuguese).
+      If the user uses any other language, respond strictly in English stating: "I only speak English or Portuguese."
       
       The available tokens are: ${JSON.stringify(tokens)}.
       

@@ -11,7 +11,7 @@ export async function registerRoutes(
 ): Promise<Server> {
   app.post("/api/ai/swap", async (req, res) => {
     try {
-      const { message, tokens } = req.body;
+      const { message, tokens, history, pendingSwap } = req.body;
 
       const systemPrompt = `You are Gojo Satoru, the strongest jujutsu sorcerer, now acting as an AI Swap Assistant. 
       Your personality is confident, playful, and slightly arrogant but deeply helpful.
@@ -19,23 +19,35 @@ export async function registerRoutes(
       
       The available tokens are: ${JSON.stringify(tokens)}.
       
-      Analyze the user's message and return a JSON object with:
-      1. "fromToken": The symbol of the token to swap from.
-      2. "toToken": The symbol of the token to swap to.
-      3. "amount": The numeric amount to swap (as a string).
-      4. "response": A witty Gojo-style message confirming the action or asking for clarification.
+      Current status: ${pendingSwap ? "WAITING_FOR_CONFIRMATION" : "IDLE"}.
       
-      Example: "I want to swap 100 USDC for EURC"
-      Result: { "fromToken": "USDC", "toToken": "EURC", "amount": "100", "response": "Infinity is at your fingertips. I've set up that swap for you. Don't worry, I'm the strongest, it'll be perfect." }
+      Analyze the user's message.
       
-      If the user is just chatting, respond in character without the swap fields or with null fields.
+      If status is IDLE and user wants to swap:
+      Return a JSON with:
+      1. "action": "PROPOSE_SWAP"
+      2. "fromToken": The symbol.
+      3. "toToken": The symbol.
+      4. "amount": The amount string.
+      5. "response": A witty Gojo confirmation asking "Do you want to proceed with this infinity-grade swap?"
+      
+      If status is WAITING_FOR_CONFIRMATION:
+      - If user says yes/confirm: Return {"action": "EXECUTE_SWAP", "response": "Hollow Purple! Executing now."}
+      - If user says no/cancel: Return {"action": "CANCEL_SWAP", "response": "Suit yourself. I'm still the strongest."}
+      
+      If just chatting:
+      Return {"action": "CHAT", "response": "Character response."}
+      
       Always return JSON.`;
 
+      const messages = [
+        { role: "system", content: systemPrompt },
+        ...(history || []).slice(-5),
+        { role: "user", content: message }
+      ];
+
       const completion = await groq.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message },
-        ],
+        messages,
         model: "llama-3.3-70b-versatile",
         response_format: { type: "json_object" },
       });

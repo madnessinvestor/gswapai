@@ -6,7 +6,7 @@ import { Sparkles, Send, Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AISwapAssistantProps {
-  onSwapAction: (from: string, to: string, amount: string) => void;
+  onSwapAction: (from: string, to: string, amount: string) => Promise<void>;
   tokens: any[];
 }
 
@@ -14,6 +14,7 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState<{ role: "user" | "ai"; content: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingSwap, setPendingSwap] = useState<any>(null);
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -27,13 +28,27 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
       const response = await fetch("/api/ai/swap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage, tokens }),
+        body: JSON.stringify({ 
+          message: userMessage, 
+          tokens,
+          history: chat,
+          pendingSwap 
+        }),
       });
 
       const data = await response.json();
 
-      if (data.fromToken && data.toToken && data.amount) {
-        onSwapAction(data.fromToken, data.toToken, data.amount);
+      if (data.action === "PROPOSE_SWAP") {
+        setPendingSwap({
+          from: data.fromToken,
+          to: data.toToken,
+          amount: data.amount
+        });
+      } else if (data.action === "EXECUTE_SWAP" && pendingSwap) {
+        await onSwapAction(pendingSwap.from, pendingSwap.to, pendingSwap.amount);
+        setPendingSwap(null);
+      } else if (data.action === "CANCEL_SWAP") {
+        setPendingSwap(null);
       }
 
       setChat((prev) => [...prev, { role: "ai", content: data.response || "Something went wrong, but I'm still the strongest." }]);

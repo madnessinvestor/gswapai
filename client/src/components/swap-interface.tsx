@@ -1287,18 +1287,26 @@ export default function SwapInterface() {
 
   const [activeTab, setActiveTab] = useState<"swap" | "ai">("swap");
 
-  const handleAIAction = (from: string, to: string, amount: string) => {
+  const handleAIAction = async (from: string, to: string, amount: string) => {
     const fromT = ARC_TOKENS.find(t => t.symbol === from) || fromToken;
     const toT = ARC_TOKENS.find(t => t.symbol === to) || toToken;
     
     setFromToken(fromT);
     setToToken(toT);
     setInputAmount(amount);
-    setActiveTab("swap");
+    
+    // Check if we can execute swap immediately or if approval is needed
+    // The handleSwap function logic is already defined, we trigger it.
+    // We stay in the AI tab
     toast({
-      title: "AI Assisted Swap",
-      description: `Gojo set up your swap: ${amount} ${from} to ${to}`,
+      title: "AI Executing Swap",
+      description: `Gojo is processing: ${amount} ${from} to ${to}`,
     });
+
+    // Wait for state updates to propagate
+    setTimeout(() => {
+        handleSwap();
+    }, 500);
   };
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);

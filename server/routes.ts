@@ -112,7 +112,7 @@ export async function registerRoutes(
         // Basic rule-based fallback for Swap
         if (!pendingSwap) {
           const finalAmount = amount || "100";
-          const rate = fromToken === "USDC" ? 0.085165 : 11.7419;
+          const rate = fromToken === "USDC" ? 0.084118 : 11.888;
           const estimatedAmount = (parseFloat(finalAmount) * rate).toFixed(6);
 
           return res.json({
@@ -145,7 +145,8 @@ export async function registerRoutes(
       The available tokens are: ${JSON.stringify(tokens)}.
       Current status: ${pendingSwap ? "WAITING_FOR_CONFIRMATION" : "IDLE"}.
       Pending swap: ${JSON.stringify(pendingSwap)}.
-      If the user specifies only a token name after you asked for an amount, continue the swap flow with that token and ask for the amount again if still missing.`;
+      If the user specifies only a token name after you asked for an amount, continue the swap flow with that token and ask for the amount again if still missing.
+      Use current rates for estimates: 1 EURC = 11.888 USDC and 1 USDC = 0.084118 EURC.`;
 
       const messages = [
         { role: "system", content: systemPrompt },

@@ -479,7 +479,10 @@ export default function SwapInterface() {
   
   // State for dynamic exchange rate
   // Arc Testnet specific: 1 USDC ≈ 0.085165 EURC
-  const [exchangeRate, setExchangeRate] = useState(0.085165);
+  // The price on the reference image shows 10 EURC = 118.88 USDC
+  // So 1 EURC = 11.888 USDC
+  // Or 1 USDC = 1 / 11.888 = 0.084118 EURC
+  const [exchangeRate, setExchangeRate] = useState(0.084118);
 
   // Fetch Live Exchange Rate - REMOVED redundant interval
   // The price is now driven by the PriceChart component via callback

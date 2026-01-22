@@ -32,7 +32,7 @@ export async function registerRoutes(
       2. "fromToken": The symbol.
       3. "toToken": The symbol.
       4. "amount": The amount string.
-      5. "response": A witty Gojo confirmation asking "Do you want to proceed with this infinity-grade swap?"
+      5. "response": A witty Gojo summary of the request in the user's language, ex: "Você quer trocar [amount] [fromToken] por [toToken]. Confirmar?"
       
       If status is WAITING_FOR_CONFIRMATION:
       - If user says yes/confirm (or "Sim", "Confirmar" in Portuguese): Return {"action": "EXECUTE_SWAP", "response": "Hollow Purple! Executing now."}

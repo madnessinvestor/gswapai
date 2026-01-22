@@ -18,9 +18,14 @@ export async function registerRoutes(
       if (!groq) {
         const msg = message.toLowerCase();
         
-        // Language detection (very basic for fallback mode)
-        const isPt = /([aoe]s?|u[nm]s?|quem|como|onde|por|porque|trocar|sim|não|confirmar|quero|moeda|valor)/i.test(msg);
-        const isEn = /(the|and|is|are|how|where|why|what|swap|yes|no|confirm|want|token|amount)/i.test(msg);
+        // Refined language detection for fallback mode
+        // Only consider it Portuguese if it has PT-specific words AND doesn't have EN-specific common words
+        const hasPtWords = /([aoe]s?|u[nm]s?|quem|como|onde|por|porque|trocar|sim|não|confirmar|quero|moeda|valor|pela|pelo)/i.test(msg);
+        const hasEnWords = /(the|and|is|are|how|where|why|what|swap|yes|no|confirm|want|token|amount|for|with)/i.test(msg);
+        
+        // If it has strong English indicators like "swap", "for", "the", we prioritize English
+        const isEn = hasEnWords || (!hasPtWords && msg.length > 0);
+        const isPt = hasPtWords && !hasEnWords;
         
         if (!isPt && !isEn) {
           return res.json({

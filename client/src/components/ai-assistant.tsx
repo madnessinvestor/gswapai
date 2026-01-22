@@ -15,6 +15,7 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
   const [chat, setChat] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<any>(null);
+  const [context, setContext] = useState<{ fromToken?: string; toToken?: string }>({});
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -32,11 +33,16 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
           message: userMessage, 
           tokens,
           history: chat,
-          pendingSwap 
+          pendingSwap,
+          context
         }),
       });
 
       const data = await response.json();
+
+      if (data.context) {
+        setContext(data.context);
+      }
 
       if (data.action === "PROPOSE_SWAP") {
         setPendingSwap({

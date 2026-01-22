@@ -13,17 +13,15 @@ export async function registerRoutes(
 ): Promise<Server> {
   app.post("/api/ai/swap", async (req, res) => {
     try {
-      const { message, tokens, history, pendingSwap } = req.body;
+      const { message, tokens, history, pendingSwap, context } = req.body;
 
       if (!groq) {
         const msg = message.toLowerCase();
         
         // Refined language detection for fallback mode
-        // Only consider it Portuguese if it has PT-specific words AND doesn't have EN-specific common words
         const hasPtWords = /([aoe]s?|u[nm]s?|quem|como|onde|por|porque|trocar|sim|não|confirmar|quero|moeda|valor|pela|pelo)/i.test(msg);
         const hasEnWords = /(the|and|is|are|how|where|why|what|swap|yes|no|confirm|want|token|amount|for|with)/i.test(msg);
         
-        // If it has strong English indicators like "swap", "for", "the", we prioritize English
         const isEn = hasEnWords || (!hasPtWords && msg.length > 0);
         const isPt = hasPtWords && !hasEnWords;
         
@@ -34,24 +32,55 @@ export async function registerRoutes(
           });
         }
 
+        // --- Continuity / Context Extraction ---
+        let fromToken = context?.fromToken || "USDC";
+        let toToken = context?.toToken || "EURC";
+        
+        if (msg.includes("eurc") && msg.includes("usdc")) {
+          if (msg.indexOf("eurc") < msg.indexOf("usdc")) {
+            fromToken = "EURC";
+            toToken = "USDC";
+          } else {
+            fromToken = "USDC";
+            toToken = "EURC";
+          }
+        } else if (msg.includes("eurc")) {
+          if (msg.includes("for") || msg.includes("to") || msg.includes("por") || msg.includes("para")) {
+            toToken = "EURC";
+            if (toToken === fromToken) fromToken = "USDC";
+          } else {
+            fromToken = "EURC";
+            if (fromToken === toToken) toToken = "USDC";
+          }
+        } else if (msg.includes("usdc")) {
+          if (msg.includes("for") || msg.includes("to") || msg.includes("por") || msg.includes("para")) {
+            toToken = "USDC";
+            if (toToken === fromToken) fromToken = "EURC";
+          } else {
+            fromToken = "USDC";
+            if (fromToken === toToken) toToken = "EURC";
+          }
+        }
+
         // --- Better Intent Detection for Fallback Mode ---
         const isSwapIntent = msg.includes("swap") || msg.includes("trocar") || msg.includes("troca") || msg.includes("quero") || /\d+/.test(msg);
-        const hasAmount = /(\d+(?:\.\d+)?)/.test(msg);
+        const amountMatch = msg.match(/(\d+(?:\.\d+)?)/);
+        const amount = amountMatch ? amountMatch[1] : null;
         
-        if (!pendingSwap && isSwapIntent && !hasAmount) {
+        if (!pendingSwap && isSwapIntent && !amount) {
           return res.json({
             action: "CHAT",
+            context: { fromToken, toToken },
             response: isPt 
-              ? "Claro! Eu sou o mais forte, posso trocar qualquer coisa. Quanto você quer trocar e de qual token para qual? (Ex: 10 USDC para EURC)"
-              : "Sure! I'm the strongest, I can swap anything. How much do you want to swap and from which token to which? (Ex: 10 USDC to EURC)"
+              ? `Claro! Eu sou o mais forte. Você quer trocar ${fromToken} por ${toToken}. Quanto você quer trocar?`
+              : `Sure! I'm the strongest. You want to swap ${fromToken} for ${toToken}. How much do you want to swap?`
           });
         }
 
         if (!pendingSwap && !isSwapIntent) {
-          // It's just a chat message, not a swap request
           const chatResponse = isPt
-            ? "Eu sou Gojo Satoru, o feiticeiro mais forte e seu assistente de swap na rede Arc. No momento estou em modo de contingência, mas ainda posso te dar conselhos: sempre mantenha seu Infinito ativado e nunca subestime uma taxa de slippage. Como posso ajudar com suas trocas hoje?"
-            : "I am Gojo Satoru, the strongest sorcerer and your swap assistant on the Arc network. I'm in contingency mode right now, but I can still give you some advice: always keep your Infinity active and never underestimate slippage rates. How can I help with your swaps today?";
+            ? "Eu sou Gojo Satoru, o feiticeiro mais forte e seu assistente de swap na rede Arc. Como posso ajudar com suas trocas hoje?"
+            : "I am Gojo Satoru, the strongest sorcerer and your swap assistant on the Arc network. How can I help with your swaps today?";
 
           return res.json({
             action: "CHAT",
@@ -61,64 +90,38 @@ export async function registerRoutes(
 
         // Basic rule-based fallback
         if (!pendingSwap) {
-          // Look for swap intent: "swap 100 usdc for eurc" or "trocar 100 usdc por eurc"
-          const amountMatch = msg.match(/(\d+(?:\.\d+)?)/);
-          const amount = amountMatch ? amountMatch[1] : "100";
-          
-          let fromToken = "USDC";
-          let toToken = "EURC";
-          
-          // Better token detection
-          if (msg.includes("eurc") && msg.includes("usdc")) {
-            if (msg.indexOf("eurc") < msg.indexOf("usdc")) {
-              fromToken = "EURC";
-              toToken = "USDC";
-            } else {
-              fromToken = "USDC";
-              toToken = "EURC";
-            }
-          } else if (msg.includes("eurc")) {
-            toToken = "EURC";
-            fromToken = "USDC";
-          } else if (msg.includes("usdc")) {
-            fromToken = "USDC";
-            toToken = "EURC";
-          }
-
-          // Fixed response formatting for the frontend to parse correctly
+          const finalAmount = amount || "100";
           const rate = fromToken === "USDC" ? 0.085165 : 11.7419;
-          const estimatedAmount = (parseFloat(amount) * rate).toFixed(6);
+          const estimatedAmount = (parseFloat(finalAmount) * rate).toFixed(6);
 
           const response = isPt 
-            ? `Entendido! Você quer trocar ${amount} ${fromToken} por aproximadamente ${estimatedAmount} ${toToken}. Relaxa, eu sou o mais forte. Confirmar? (Sim/Não)`
-            : `Got it! You want to swap ${amount} ${fromToken} for about ${estimatedAmount} ${toToken}. Don't worry, I'm the strongest. Confirm? (Yes/No)`;
+            ? `Entendido! Você quer trocar ${finalAmount} ${fromToken} por aproximadamente ${estimatedAmount} ${toToken}. Relaxa, eu sou o mais forte. Confirmar? (Sim/Não)`
+            : `Got it! You want to swap ${finalAmount} ${fromToken} for about ${estimatedAmount} ${toToken}. Don't worry, I'm the strongest. Confirm? (Yes/No)`;
 
           return res.json({
             action: "PROPOSE_SWAP",
             fromToken,
             toToken,
-            amount,
+            amount: finalAmount,
             response
           });
         } else {
-          // Handle confirmation
           if (msg.includes("sim") || msg.includes("yes") || msg.includes("confirmar") || msg.includes("confirm")) {
             return res.json({
               action: "EXECUTE_SWAP",
-              response: isPt ? "Hollow Purple! Executando a troca agora. Nada pode me parar." : "Hollow Purple! Executing the swap now. Nothing can stop me."
+              response: isPt ? "Hollow Purple! Executando a troca agora." : "Hollow Purple! Executing the swap now."
             });
           } else if (msg.includes("não") || msg.includes("no") || msg.includes("cancelar") || msg.includes("cancel") || msg.includes("outro valor")) {
             return res.json({
               action: "CANCEL_SWAP",
               response: isPt 
-                ? "Entendi, mudou de ideia? Sem problemas. O que você quer fazer então? Diga o novo valor ou token."
-                : "Got it, changed your mind? No problem. What do you want to do then? Tell me the new amount or token."
+                ? "Entendi. O que você quer fazer então? Diga o novo valor ou token."
+                : "Got it. What do you want to do then? Tell me the new amount or token."
             });
           } else {
-            // Invalid response during confirmation - ask again while keeping state
             const response = isPt
-              ? "Não entendi sua resposta. Você quer confirmar a troca? (Diga Sim ou Não). Não me faça esperar."
-              : "I didn't catch that. Do you want to confirm the swap? (Say Yes or No). Don't keep me waiting.";
+              ? "Não entendi sua resposta. Você quer confirmar a troca? (Sim/Não)"
+              : "I didn't catch that. Do you want to confirm the swap? (Yes/No)";
             
             return res.json({
               action: "PROPOSE_SWAP",

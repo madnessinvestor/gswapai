@@ -27,20 +27,33 @@ export async function registerRoutes(
           let fromToken = "USDC";
           let toToken = "EURC";
           
-          if (msg.includes("eurc") && msg.indexOf("eurc") < msg.indexOf("usdc")) {
-            fromToken = "EURC";
-            toToken = "USDC";
-          } else if (msg.includes("eurc") && !msg.includes("usdc")) {
+          // Better token detection
+          if (msg.includes("eurc") && msg.includes("usdc")) {
+            if (msg.indexOf("eurc") < msg.indexOf("usdc")) {
+              fromToken = "EURC";
+              toToken = "USDC";
+            } else {
+              fromToken = "USDC";
+              toToken = "EURC";
+            }
+          } else if (msg.includes("eurc")) {
+            toToken = "EURC";
+            fromToken = "USDC";
+          } else if (msg.includes("usdc")) {
             fromToken = "USDC";
             toToken = "EURC";
           }
+
+          // Fixed response formatting for the frontend to parse correctly
+          const rate = fromToken === "USDC" ? 0.085165 : 11.7419;
+          const estimatedAmount = (parseFloat(amount) * rate).toFixed(6);
 
           return res.json({
             action: "PROPOSE_SWAP",
             fromToken,
             toToken,
             amount,
-            response: `Entendido! Você quer trocar ${amount} ${fromToken} por ${toToken}. (Nota: AI em modo de fallback). Confirmar? (Sim/Não)`
+            response: `Entendido! Você quer trocar ${amount} ${fromToken} por aproximadamente ${estimatedAmount} ${toToken}. (Nota: AI em modo de fallback). Confirmar? (Sim/Não)`
           });
         } else {
           // Handle confirmation
@@ -64,7 +77,6 @@ export async function registerRoutes(
       }
 
       const systemPrompt = `You are Gojo Satoru, the strongest jujutsu sorcerer, now acting as an AI Swap Assistant. 
-      Your personality is confident, playful, and slightly arrogant but deeply helpful.
       Your personality is confident, playful, and slightly arrogant but deeply helpful.
       You help users perform swaps on the Arc network.
       

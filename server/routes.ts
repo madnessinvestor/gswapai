@@ -32,7 +32,7 @@ export async function registerRoutes(
       2. "fromToken": The symbol.
       3. "toToken": The symbol.
       4. "amount": The amount string.
-      5. "response": A witty Gojo summary of the request in the user's language, INCLUDING the estimated output value based on current rates (~0.085165 for USDC->EURC or ~11.7419 for EURC->USDC), ex: "Você quer trocar [amount] [fromToken] por aproximadamente [estimatedAmount] [toToken]. Confirmar?"
+      5. "response": A witty Gojo summary of the request in the user's language, INCLUDING the estimated output value based on current rates (~0.085165 for USDC->EURC or ~11.7419 for EURC->USDC), ex: "Você quer trocar [amount] [fromToken] por aproximadamente [estimatedAmount] [toToken]. Confirmar? (Sim/Não)"
       
       If status is WAITING_FOR_CONFIRMATION:
       - If user says yes/confirm (or "Sim", "Confirmar" in Portuguese): Return {"action": "EXECUTE_SWAP", "response": "Hollow Purple! Executing now."}

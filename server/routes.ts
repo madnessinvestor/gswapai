@@ -29,6 +29,21 @@ export async function registerRoutes(
           });
         }
 
+        // --- NEW: Better Intent Detection for Fallback Mode ---
+        const isSwapIntent = msg.includes("swap") || msg.includes("trocar") || msg.includes("troca") || msg.includes("quero") || /\d+/.test(msg);
+        
+        if (!pendingSwap && !isSwapIntent) {
+          // It's just a chat message, not a swap request
+          const chatResponse = isPt
+            ? "Eu sou Gojo Satoru, o feiticeiro mais forte e seu assistente de swap na rede Arc. No momento estou em modo de contingência, mas ainda posso te dar conselhos: sempre mantenha seu Infinito ativado e nunca subestime uma taxa de slippage. Como posso ajudar com suas trocas hoje?"
+            : "I am Gojo Satoru, the strongest sorcerer and your swap assistant on the Arc network. I'm in contingency mode right now, but I can still give you some advice: always keep your Infinity active and never underestimate slippage rates. How can I help with your swaps today?";
+
+          return res.json({
+            action: "CHAT",
+            response: chatResponse
+          });
+        }
+
         // Basic rule-based fallback
         if (!pendingSwap) {
           // Look for swap intent: "swap 100 usdc for eurc" or "trocar 100 usdc por eurc"

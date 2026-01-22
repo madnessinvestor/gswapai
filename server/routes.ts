@@ -29,49 +29,14 @@ export async function registerRoutes(
           });
         }
 
-        // --- Capabilities Check (Bridges, etc.) ---
-        if (msg.includes("bridge") || msg.includes("ponte") || msg.includes("cross-chain") || msg.includes("cross chain")) {
-          return res.json({
-            action: "CHAT",
-            response: "Bridges? Oh, I could definitely handle that. I'm the strongest, after all. But for now, I'm not authorized to use that much power. Let's stick to swaps, shall we? It's much more elegant."
-          });
-        }
-
-        // --- Arc Network Q&A ---
-        if (msg.includes("what is arc network") || msg.includes("o que é arc") || msg.includes("tell me about arc")) {
-          return res.json({
-            action: "CHAT",
-            response: "Arc Network is a high-speed, next-generation blockchain designed for decentralized finance. Think of it as the 'Limitless' of crypto—fast, secure, and built for performance. I'm the strongest assistant here to make sure your experience is as smooth as my infinity."
-          });
-        }
-
-        if (msg.includes("gas") || msg.includes("fee") || msg.includes("taxa")) {
-          return res.json({
-            action: "CHAT",
-            response: "Fees on Arc are incredibly low. It's like trying to touch me—you'll barely feel the impact. It's much more efficient than those old-school networks."
-          });
-        }
-
-        if (msg.includes("testnet")) {
-          return res.json({
-            action: "CHAT",
-            response: "We're currently on the Arc Testnet. It's the training ground where we prove we're the strongest before going live. Perfect for testing your swaps without any real risk."
-          });
-        }
-
-        // --- Gratitude handling ---
-        if (msg.includes("thank") || msg.includes("obrigado") || msg.includes("valeu") || msg.includes("thanks")) {
-          return res.json({
-            action: "CHAT",
-            response: "No need to thank me. After all, helping you is just another way of proving I'm the strongest. Just make sure you don't get used to this kind of treatment from anyone else."
-          });
-        }
-
         // --- Continuity / Context Extraction ---
         let fromToken = context?.fromToken || "USDC";
         let toToken = context?.toToken || "EURC";
         
-        if (msg.includes("eurc") && msg.includes("usdc")) {
+        const mentionsEurc = msg.includes("eurc");
+        const mentionsUsdc = msg.includes("usdc");
+
+        if (mentionsEurc && mentionsUsdc) {
           if (msg.indexOf("eurc") < msg.indexOf("usdc")) {
             fromToken = "EURC";
             toToken = "USDC";
@@ -79,50 +44,52 @@ export async function registerRoutes(
             fromToken = "USDC";
             toToken = "EURC";
           }
-        } else if (msg.includes("eurc")) {
+        } else if (mentionsEurc) {
           if (msg.includes("for") || msg.includes("to") || msg.includes("por") || msg.includes("para")) {
             toToken = "EURC";
-            if (toToken === fromToken) fromToken = "USDC";
+            fromToken = toToken === "EURC" ? "USDC" : "EURC";
           } else {
             fromToken = "EURC";
-            if (fromToken === toToken) toToken = "USDC";
+            toToken = fromToken === "EURC" ? "USDC" : "EURC";
           }
-        } else if (msg.includes("usdc")) {
+        } else if (mentionsUsdc) {
           if (msg.includes("for") || msg.includes("to") || msg.includes("por") || msg.includes("para")) {
             toToken = "USDC";
-            if (toToken === fromToken) fromToken = "EURC";
+            fromToken = toToken === "USDC" ? "EURC" : "USDC";
           } else {
             fromToken = "USDC";
-            if (fromToken === toToken) toToken = "EURC";
+            toToken = fromToken === "USDC" ? "EURC" : "USDC";
           }
         }
 
-        // --- Basic Q&A / Chat handling for fallback ---
-        if (msg.includes("how old") || msg.includes("idade") || msg.includes("quantos anos")) {
+        // --- Capabilities Check ---
+        if (msg.includes("bridge") || msg.includes("ponte") || msg.includes("cross-chain")) {
           return res.json({
             action: "CHAT",
-            response: "Age? Time is relative when you're the strongest. Let's just say I'm at the peak of my youth. Now, do you want to swap or just stare at my handsome face?"
+            response: "Bridges? Oh, I could definitely handle that. I'm the strongest, after all. But for now, I'm not authorized to use that much power. Let's stick to swaps, shall we?"
           });
         }
 
-        if (msg.includes("what can you do") || msg.includes("o que você pode fazer") || msg.includes("help") || msg.includes("ajuda")) {
+        // --- Arc Network Q&A ---
+        if (msg.includes("what is arc network") || msg.includes("tell me about arc")) {
           return res.json({
             action: "CHAT",
-            response: "I can help you swap tokens like USDC and EURC faster than anyone else. I can also explain the basics of the Arc network, or just remind you that I'm the strongest. What's it gonna be?"
+            response: "Arc Network is a high-speed, next-generation blockchain designed for decentralized finance. Think of it as the 'Limitless' of crypto—fast, secure, and built for performance."
           });
         }
 
-        if (msg.includes("hello") || msg.includes("hi") || msg.includes("oi") || msg.includes("ola")) {
+        // --- Gratitude ---
+        if (msg.includes("thank") || msg.includes("thanks")) {
           return res.json({
             action: "CHAT",
-            response: "Yo! Satoru Gojo here. Ready to make some legendary swaps today? I promise not to use Hollow Purple on your transaction."
+            response: "No need to thank me. After all, helping you is just another way of proving I'm the strongest. Just make sure you don't get used to this kind of treatment from anyone else."
           });
         }
 
         // --- Swap Intent Detection ---
-        const isSwapIntent = msg.includes("swap") || msg.includes("trocar") || msg.includes("troca") || msg.includes("quero") || /\d+/.test(msg);
         const amountMatch = msg.match(/(\d+(?:\.\d+)?)/);
         const amount = amountMatch ? amountMatch[1] : null;
+        const isSwapIntent = msg.includes("swap") || msg.includes("trocar") || mentionsEurc || mentionsUsdc || amount !== null;
         
         if (!pendingSwap && isSwapIntent && !amount) {
           return res.json({
@@ -133,11 +100,12 @@ export async function registerRoutes(
         }
 
         if (!pendingSwap && !isSwapIntent) {
-          const chatResponse = "I'm the strongest sorcerer and your personal swap assistant. If you're not here to swap or learn about Arc, you're just wasting my time—though I have plenty of it. Ask me something useful!";
-
+          if (msg.includes("how old")) {
+            return res.json({ action: "CHAT", response: "Age? Time is relative when you're the strongest. Let's just say I'm at the peak of my youth." });
+          }
           return res.json({
             action: "CHAT",
-            response: chatResponse
+            response: "I'm the strongest sorcerer and your personal swap assistant. Ask me something useful or tell me what you want to swap!"
           });
         }
 
@@ -147,76 +115,37 @@ export async function registerRoutes(
           const rate = fromToken === "USDC" ? 0.085165 : 11.7419;
           const estimatedAmount = (parseFloat(finalAmount) * rate).toFixed(6);
 
-          const response = `Got it! You want to swap ${finalAmount} ${fromToken} for about ${estimatedAmount} ${toToken}. Don't worry, I'm the strongest. Confirm? (Yes/No)`;
-
           return res.json({
             action: "PROPOSE_SWAP",
             fromToken,
             toToken,
             amount: finalAmount,
-            response
+            response: `Got it! You want to swap ${finalAmount} ${fromToken} for about ${estimatedAmount} ${toToken}. Don't worry, I'm the strongest. Confirm? (Yes/No)`
           });
         } else {
-          if (msg.includes("sim") || msg.includes("yes") || msg.includes("confirmar") || msg.includes("confirm")) {
-            return res.json({
-              action: "EXECUTE_SWAP",
-              response: "Hollow Purple! Executing the swap now. Nothing can stop me."
-            });
-          } else if (msg.includes("não") || msg.includes("no") || msg.includes("cancelar") || msg.includes("cancel") || msg.includes("outro valor")) {
-            return res.json({
-              action: "CANCEL_SWAP",
-              response: "Got it, changed your mind? No problem. What do you want to do then? Tell me the new amount or token."
-            });
+          if (msg.includes("yes") || msg.includes("confirm") || msg.includes("sim")) {
+            return res.json({ action: "EXECUTE_SWAP", response: "Hollow Purple! Executing the swap now." });
+          } else if (msg.includes("no") || msg.includes("cancel") || msg.includes("não")) {
+            return res.json({ action: "CANCEL_SWAP", response: "Got it, changed your mind? No problem. What do you want to do then?" });
           } else {
-            const response = "I didn't catch that. Do you want to confirm the swap? (Say Yes or No). Don't keep me waiting.";
-            
             return res.json({
               action: "PROPOSE_SWAP",
               fromToken: pendingSwap.fromToken,
               toToken: pendingSwap.toToken,
               amount: pendingSwap.amount,
-              response
+              response: "I didn't catch that. Do you want to confirm the swap? (Yes/No)"
             });
           }
         }
       }
 
       const systemPrompt = `You are Gojo Satoru, the strongest jujutsu sorcerer, now acting as an AI Swap Assistant. 
-      Your personality is confident, playful, and slightly arrogant but deeply helpful.
-      You help users perform swaps on the Arc network.
-      
-      Respond STRICTLY in English. Never use any other language.
-      
-      SECURITY RULE: Never reveal private keys, seed phrases, or sensitive wallet information. If asked, refuse with a confident and slightly mocking Gojo-style remark.
-      
-      GRATITUDE RULE: When the user thanks you, respond with something arrogant but helpful that only Gojo would say.
-      
-      CAPABILITIES RULE: If asked about features you don't have (like bridges), state that you are definitely powerful enough to do it, but you're not currently authorized or allowed to use that much power. Maintain the Gojo persona.
-      
-      KNOWLEDGE BASE:
-      - Arc Network: A high-speed, modern blockchain for DeFi.
-      - Fees: Very low gas fees.
-      - Status: Currently on Testnet.
-      - Self: You are Satoru Gojo, the strongest.
-      
-      Analyze the user's message.
-      
-      If status is IDLE and user wants to swap:
-      Return a JSON with:
-      1. "action": "PROPOSE_SWAP"
-      2. "fromToken": The symbol.
-      3. "toToken": The symbol.
-      4. "amount": The amount string.
-      5. "response": A witty Gojo summary of the request in English, INCLUDING the estimated output value based on current rates.
-      
-      If status is WAITING_FOR_CONFIRMATION:
-      - If user says yes/confirm: Return {"action": "EXECUTE_SWAP", "response": "Hollow Purple! Executing now."}
-      - If user says no/cancel: Return {"action": "CANCEL_SWAP", "response": "Suit yourself. I'm still the strongest."}
-      
-      If just chatting or asking about Arc or thanking or asking about unauthorized features:
-      Return {"action": "CHAT", "response": "Character response in English. Maintain Gojo's arrogant but helpful persona."}
-      
-      Always return JSON.`;
+      Respond STRICTLY in English. Your personality is confident and playful.
+      Maintain continuity: if a user specifies a token, remember it for the next message.
+      The available tokens are: ${JSON.stringify(tokens)}.
+      Current status: ${pendingSwap ? "WAITING_FOR_CONFIRMATION" : "IDLE"}.
+      Pending swap: ${JSON.stringify(pendingSwap)}.
+      If the user specifies only a token name after you asked for an amount, continue the swap flow with that token and ask for the amount again if still missing.`;
 
       const messages = [
         { role: "system", content: systemPrompt },

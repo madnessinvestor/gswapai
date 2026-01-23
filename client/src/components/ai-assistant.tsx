@@ -166,9 +166,37 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
         const toTokenObj = tokens.find(t => t.symbol === pendingSwap.to);
         
         if (fromTokenObj && toTokenObj) {
-          // Pass full token objects and ensure amount is correctly passed as a string
-          // This should match the signature of handleSwapAction in SwapInterface
-          await onSwapAction(fromTokenObj, toTokenObj, String(pendingSwap.amount));
+          try {
+            // Pass full token objects and ensure amount is correctly passed as a string
+            // This should match the signature of handleSwapAction in SwapInterface
+            await onSwapAction(fromTokenObj, toTokenObj, String(pendingSwap.amount));
+          } catch (error: any) {
+            console.error("Swap execution error:", error);
+            // Se a transação falhar por saldo insuficiente ou cancelamento
+            const errorMsg = error.message?.toLowerCase() || "";
+            const isCancelled = errorMsg.includes("user rejected") || error.code === 4001 || errorMsg.includes("rejected");
+            const isInsufficient = errorMsg.includes("insufficient funds") || errorMsg.includes("exceeds balance") || errorMsg.includes("insufficient");
+            
+            let status = "TRANSACTION_ERROR";
+            if (isCancelled) status = "TRANSACTION_CANCELLED";
+            else if (isInsufficient) status = "INSUFFICIENT_FUNDS";
+
+            const feedbackResponse = await fetch("/api/ai/swap", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ 
+                status,
+                tokens,
+                history: chat,
+                context
+              }),
+            });
+            const feedbackData = await feedbackResponse.json();
+            setChat((prev) => [...prev, { role: "assistant", content: feedbackData.response }]);
+            setPendingSwap(null);
+            setIsLoading(false);
+            return;
+          }
         } else {
           console.error("Tokens not found for swap:", pendingSwap.from, pendingSwap.to);
           setChat((prev) => [...prev, { role: "assistant", content: "Não consegui encontrar os tokens para realizar a troca. Algo está errado no meu reino." }]);

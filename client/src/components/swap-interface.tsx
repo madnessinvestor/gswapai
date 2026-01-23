@@ -1113,6 +1113,12 @@ export default function SwapInterface() {
       const client = getWalletClient();
       if (!client) return;
       
+      // Capturar os valores atuais para o toast
+      const currentInputAmount = inputAmount;
+      const currentOutputAmount = outputAmount;
+      const currentFromToken = fromToken;
+      const currentToToken = toToken;
+
       // Re-fetch account to ensure we have the active one
       const accounts = await (client as any).request({ method: 'eth_accounts' });
       const activeAccount = accounts[0];
@@ -1230,14 +1236,14 @@ export default function SwapInterface() {
               fetchBalances(account);
               
               // Add to trades
-              const isBuy = fromToken.symbol === 'USDC';
+              const isBuy = currentFromToken.symbol === 'USDC';
               const newTrade = {
                 trader: `${account.slice(0,6)}...${account.slice(-4)}`,
                 fullTrader: account,
                 type: isBuy ? 'Buy' : 'Sell',
-                tokenAmount: isBuy ? parseFloat(outputAmount).toFixed(4) : parseFloat(inputAmount).toFixed(4),
-                tokenSymbol: isBuy ? toToken.symbol : fromToken.symbol,
-                usdcAmount: isBuy ? parseFloat(inputAmount).toFixed(4) : parseFloat(outputAmount).toFixed(4),
+                tokenAmount: isBuy ? parseFloat(currentOutputAmount).toFixed(4) : parseFloat(currentInputAmount).toFixed(4),
+                tokenSymbol: isBuy ? currentToToken.symbol : currentFromToken.symbol,
+                usdcAmount: isBuy ? parseFloat(currentInputAmount).toFixed(4) : parseFloat(currentOutputAmount).toFixed(4),
                 time: "Just now",
                 timestamp: Date.now(), // Add timestamp
                 hash: `${hash.slice(0,6)}...${hash.slice(-4)}`,
@@ -1263,13 +1269,8 @@ export default function SwapInterface() {
                 return updated;
               });
 
-          const isBuyDirection = fromToken.symbol === 'USDC';
-          const inputAmtValue = parseFloat(inputAmount);
-          const outputAmtValue = parseFloat(outputAmount);
-
-          // Confirmation logic fix
-          const soldAmount = inputAmtValue.toFixed(4);
-          const receivedAmount = outputAmtValue.toFixed(6);
+          const soldAmount = parseFloat(currentInputAmount).toFixed(4);
+          const receivedAmount = parseFloat(currentOutputAmount).toFixed(6);
 
           toast({ 
             title: "Swap Successful", 
@@ -1277,8 +1278,8 @@ export default function SwapInterface() {
               <div className="flex flex-col gap-1">
                 <p>Balances updated.</p>
                 <div className="text-xs font-mono mt-1 bg-green-500/10 p-2 rounded border border-green-500/20">
-                  <p>You sold <span className="font-bold">{soldAmount} {fromToken.symbol}</span></p>
-                  <p>Received <span className="font-bold">{receivedAmount} {toToken.symbol}</span></p>
+                  <p>You sold <span className="font-bold">{soldAmount} {currentFromToken.symbol}</span></p>
+                  <p>Received <span className="font-bold">{receivedAmount} {currentToToken.symbol}</span></p>
                 </div>
               </div>
             ),

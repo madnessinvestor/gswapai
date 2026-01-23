@@ -1603,6 +1603,27 @@ export default function SwapInterface() {
               USDC Faucet <ExternalLink className="w-3 h-3" />
             </a>
           </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="hidden sm:flex gap-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+                Other dAPPs <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-[#1c1038]/95 backdrop-blur-xl border-[#3b1f69]/50 text-foreground min-w-[200px]">
+              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b border-[#3b1f69]/50 mb-1">
+                Other dAPPs on Arc
+              </div>
+              {OTHER_DAPPS.map((dapp) => (
+                <DropdownMenuItem key={dapp.title} asChild className="hover:bg-[#3b1f69]/50 cursor-pointer">
+                  <a href={dapp.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 w-full">
+                    <dapp.icon className="w-4 h-4 text-primary" />
+                    <span>{dapp.title}</span>
+                  </a>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           {/* Network Display - Arc Testnet Only */}
           <div className="hidden sm:flex items-center gap-2 bg-[#1c1038]/80 rounded-full px-3 py-1.5 border border-[#3b1f69]/50">

@@ -119,6 +119,18 @@ export async function registerRoutes(
         }
 
         if (!pendingSwap && !isSwapIntent) {
+          const responses = [
+            "You're welcome. But don't get too comfortable, I'm the strongest after all.",
+            "No need for thanks. Just sit back and watch how the strongest does it.",
+            "Don't thank me. It's only natural for me to be this perfect.",
+            "Yo! No problem. Just make sure you keep up with my speed."
+          ];
+          const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+
+          if (msg.includes("thank") || msg.includes("obrigado") || msg.includes("valeu")) {
+            return res.json({ action: "CHAT", response: randomResponse });
+          }
+
           return res.json({ action: "CHAT", response: "I'm the strongest sorcerer and your personal swap assistant. Ask me something useful!" });
         }
 

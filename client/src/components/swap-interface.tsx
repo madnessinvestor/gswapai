@@ -499,7 +499,6 @@ export default function SwapInterface() {
   // The price is now driven by the PriceChart component via callback
   // which ensures visual synchronization.
   
-  // Fetch Live Exchange Rate from Pool
   useEffect(() => {
     const fetchRate = async () => {
       try {
@@ -508,19 +507,25 @@ export default function SwapInterface() {
           transport: http()
         });
         
-        // 1 USDC = ? EURC
-        const amounts = await publicClient.readContract({
+        // Use getAmountOut for precise 1 unit calculation
+        // 1 EURC -> USDC
+        const eurcAddress = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`;
+        const amountIn = parseUnits("1", 6);
+        
+        const amountOut = await publicClient.readContract({
           address: "0x284C5Afc100ad14a458255075324fA0A9dfd66b1" as `0x${string}`,
           abi: ROUTER_ABI,
-          functionName: 'getAmountsOut',
-          args: [parseUnits("1", 6), [USDC_ADDRESS as `0x${string}`, "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`]]
-        }) as bigint[];
+          functionName: 'getAmountOut',
+          args: [amountIn]
+        }) as bigint;
         
-        const rate = parseFloat(formatUnits(amounts[1], 6));
+        const rate = parseFloat(formatUnits(amountOut, 6));
+        
         if (rate > 0) {
-            setExchangeRate(rate);
-            // Sync currentRate if they are supposed to be the same
-            setCurrentRate(rate);
+            // This is the EURC -> USDC rate
+            const normalizedRate = fromToken.symbol === "USDC" ? 1 / rate : rate;
+            setExchangeRate(normalizedRate);
+            setCurrentRate(normalizedRate);
         }
       } catch (e) {
         console.error("Failed to fetch on-chain rate:", e);
@@ -528,9 +533,9 @@ export default function SwapInterface() {
     };
 
     fetchRate();
-    const interval = setInterval(fetchRate, 15000); // Update every 15s to match RealTime
+    const interval = setInterval(fetchRate, 10000); // 10s sync
     return () => clearInterval(interval);
-  }, []);
+  }, [fromToken]);
 
   const handlePriceUpdate = (price: number) => {
     // Sync both rates to ensure UI and internal logic match on-chain data
@@ -703,17 +708,7 @@ export default function SwapInterface() {
   }, [showMyTrades]);
   
   // Calculate current exchange rate
-  // Use the fetched exchangeRate (which is EURC -> USDC price ~7.56)
-  // If we are looking at EURC/USDC, the Chart sends us the EURC->USDC price directly.
-  // If we are looking at USDC/EURC, the Chart sends us the inverted USDC->EURC price directly.
-  // So we just use exchangeRate as is, because the Chart handles inversion before sending!
-  
-  // Wait, let's check PriceChart logic:
-  // if (fromSymbol === "USDC") return 1 / price; -> returns inverted price
-  // onPriceUpdate(price) -> sends this inverted price
-  // So exchangeRate IS the correct rate for From -> To
-  
-  // Rate is already handled by state [currentRate, setCurrentRate]
+  // State handles everything now
 
 
   // Dynamic Chart Data based on pair

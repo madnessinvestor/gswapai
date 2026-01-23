@@ -66,6 +66,14 @@ export default function AISwapAssistant({ onSwapAction, tokens, balances, wallet
   const [provider, setProvider] = useState<"groq" | "gemini">("groq");
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
+  const handleProviderChange = (newProvider: "groq" | "gemini") => {
+    if (newProvider === provider) return;
+    setProvider(newProvider);
+    setChat([]);
+    setContext({});
+    setPendingSwap(null);
+  };
+
   useEffect(() => {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognitionAPI) {
@@ -241,13 +249,13 @@ export default function AISwapAssistant({ onSwapAction, tokens, balances, wallet
         <div className="flex justify-between items-center bg-[#2d1b4d]/40 rounded-xl px-4 py-2 border border-primary/10 text-[10px] font-medium mb-2">
           <div className="flex gap-2">
             <button 
-              onClick={() => setProvider("groq")}
+              onClick={() => handleProviderChange("groq")}
               className={`px-2 py-0.5 rounded transition-colors ${provider === "groq" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
               Groq
             </button>
             <button 
-              onClick={() => setProvider("gemini")}
+              onClick={() => handleProviderChange("gemini")}
               className={`px-2 py-0.5 rounded transition-colors ${provider === "gemini" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
               Gemini

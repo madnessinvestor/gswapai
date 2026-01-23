@@ -113,7 +113,7 @@ export async function registerRoutes(
         try {
           const messages = [
             { role: "system" as const, content: systemPrompt },
-            ...(history || []).slice(-5).map((h: any) => ({ role: h.role as "user" | "assistant", content: h.content })),
+            ...(history && history.length > 0 ? history : []).slice(-5).map((h: any) => ({ role: h.role as "user" | "assistant", content: h.content })),
             { role: "user" as const, content: message }
           ];
 
@@ -140,7 +140,7 @@ export async function registerRoutes(
             }
           });
 
-          const historyForGemini = (history || []).slice(-5).map((h: any) => 
+          const historyForGemini = (history && history.length > 0 ? history : []).slice(-5).map((h: any) => 
             `${h.role === "user" ? "User" : "Assistant"}: ${h.content}`
           ).join("\n");
 

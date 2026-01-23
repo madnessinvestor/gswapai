@@ -2,10 +2,15 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Groq from "groq-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createPublicClient, http, parseUnits, formatUnits } from 'viem';
 
 const groq = process.env.GROQ_API_KEY 
   ? new Groq({ apiKey: process.env.GROQ_API_KEY })
+  : null;
+
+const gemini = process.env.GOOGLE_API_KEY
+  ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
   : null;
 
 const arcTestnet = {
@@ -92,9 +97,66 @@ export async function registerRoutes(
         }
       };
 
-      if (!groq) {
+      const systemPrompt = `You are Gojo Satoru, the strongest jujutsu sorcerer. Respond STRICTLY in English.
+      Use real pool data for estimates. If from USDC to EURC, the rate is fetched from the contract.
+      The available tokens are: ${JSON.stringify(tokens)}.
+      Current status: ${pendingSwap ? "WAITING_FOR_CONFIRMATION" : "IDLE"}.
+      Pending swap: ${JSON.stringify(pendingSwap)}.
+      Always return JSON with action and response. For PROPOSE_SWAP, include fromToken, toToken, and amount.
+      Valid actions: CHAT, PROPOSE_SWAP, EXECUTE_SWAP, CANCEL_SWAP.`;
+
+      let aiResponse: any = null;
+
+      // Try Groq first
+      if (groq) {
+        try {
+          const messages = [
+            { role: "system" as const, content: systemPrompt },
+            ...(history || []).slice(-5).map((h: any) => ({ role: h.role as "user" | "assistant", content: h.content })),
+            { role: "user" as const, content: message }
+          ];
+
+          const completion = await groq.chat.completions.create({
+            messages,
+            model: "llama-3.3-70b-versatile",
+            response_format: { type: "json_object" },
+          });
+
+          aiResponse = JSON.parse(completion.choices[0].message.content || "{}");
+          console.log("AI Response from Groq");
+        } catch (groqError) {
+          console.error("Groq error, trying Gemini:", groqError);
+        }
+      }
+
+      // Fallback to Gemini if Groq failed or unavailable
+      if (!aiResponse && gemini) {
+        try {
+          const model = gemini.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            generationConfig: {
+              responseMimeType: "application/json",
+            }
+          });
+
+          const historyForGemini = (history || []).slice(-5).map((h: any) => 
+            `${h.role === "user" ? "User" : "Assistant"}: ${h.content}`
+          ).join("\n");
+
+          const prompt = `${systemPrompt}\n\nConversation history:\n${historyForGemini}\n\nUser: ${message}\n\nRespond with valid JSON only.`;
+
+          const result = await model.generateContent(prompt);
+          const responseText = result.response.text();
+          aiResponse = JSON.parse(responseText);
+          console.log("AI Response from Gemini");
+        } catch (geminiError) {
+          console.error("Gemini error:", geminiError);
+        }
+      }
+
+      // Final fallback to simple rule-based responses
+      if (!aiResponse) {
         const msg = message.toLowerCase();
-        const isEn = true;
 
         if (msg.includes("private key") || msg.includes("chave privada")) {
           return res.json({
@@ -175,27 +237,6 @@ export async function registerRoutes(
           }
         }
       }
-
-      const systemPrompt = `You are Gojo Satoru, the strongest jujutsu sorcerer. Respond STRICTLY in English.
-      Use real pool data for estimates. If from USDC to EURC, the rate is fetched from the contract.
-      The available tokens are: ${JSON.stringify(tokens)}.
-      Current status: ${pendingSwap ? "WAITING_FOR_CONFIRMATION" : "IDLE"}.
-      Pending swap: ${JSON.stringify(pendingSwap)}.
-      Always return JSON with action and response. For PROPOSE_SWAP, include fromToken, toToken, and amount.`;
-
-      const messages = [
-        { role: "system", content: systemPrompt },
-        ...(history || []).slice(-5),
-        { role: "user", content: message }
-      ];
-
-      const completion = await groq.chat.completions.create({
-        messages,
-        model: "llama-3.3-70b-versatile",
-        response_format: { type: "json_object" },
-      });
-
-      const aiResponse = JSON.parse(completion.choices[0].message.content || "{}");
       
       if (aiResponse.action === "PROPOSE_SWAP") {
         aiResponse.estimatedAmount = await getOnChainQuote(aiResponse.amount, aiResponse.fromToken, aiResponse.toToken);

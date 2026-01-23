@@ -1691,12 +1691,30 @@ export default function SwapInterface() {
                         AI Assist
                       </Button>
                     </div>
-                    <SettingsDialog 
-                      open={isSettingsOpen} 
-                      onOpenChange={setIsSettingsOpen} 
-                      currentSlippage={slippage} 
-                      onSave={setSlippage} 
-                    />
+                    <div className="flex items-center gap-2">
+                       {activeTab === "ai" && (
+                         <div className="flex bg-[#130b29] p-0.5 rounded-md border border-primary/10 mr-1">
+                           <button 
+                             onClick={() => setAiProvider("groq")}
+                             className={`px-2 py-1 text-[10px] font-bold rounded transition-all duration-200 ${aiProvider === "groq" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                           >
+                             Groq
+                           </button>
+                           <button 
+                             onClick={() => setAiProvider("gemini")}
+                             className={`px-2 py-1 text-[10px] font-bold rounded transition-all duration-200 ${aiProvider === "gemini" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                           >
+                             Gemini
+                           </button>
+                         </div>
+                       )}
+                       <SettingsDialog 
+                        open={isSettingsOpen} 
+                        onOpenChange={setIsSettingsOpen} 
+                        currentSlippage={slippage} 
+                        onSave={setSlippage} 
+                       />
+                    </div>
                   </div>
 
                   <div className="p-4 space-y-1">
@@ -1818,29 +1836,8 @@ export default function SwapInterface() {
                           exit={{ opacity: 0, x: -10 }}
                           className="flex flex-col flex-1"
                         >
-                          <div className="p-3 border-b border-primary/10 flex justify-between items-center bg-[#2d1b4d]/20">
-                            <div className="flex items-center gap-2">
-                              <div className="p-1.5 bg-primary/20 rounded-lg">
-                                <Sparkles className="w-4 h-4 text-primary shadow-[0_0_8px_rgba(168,85,247,0.4)]" />
-                              </div>
-                              <span className="font-bold text-sm tracking-tight">AI Assist</span>
-                            </div>
-                            
+                          <div className="p-3 border-b border-primary/10 flex justify-end items-center bg-[#2d1b4d]/20">
                             <div className="flex flex-col items-end gap-0.5">
-                              <div className="flex bg-[#130b29] p-0.5 rounded-md border border-primary/10">
-                                <button 
-                                  onClick={() => setAiProvider("groq")}
-                                  className={`px-3 py-1 text-[10px] font-bold rounded transition-all duration-200 ${aiProvider === "groq" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                                >
-                                  Groq
-                                </button>
-                                <button 
-                                  onClick={() => setAiProvider("gemini")}
-                                  className={`px-3 py-1 text-[10px] font-bold rounded transition-all duration-200 ${aiProvider === "gemini" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                                >
-                                  Gemini
-                                </button>
-                              </div>
                               <span className="text-[9px] text-muted-foreground italic opacity-70">Powered by Strongest AI</span>
                             </div>
                           </div>

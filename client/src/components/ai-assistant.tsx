@@ -67,7 +67,6 @@ export default function AISwapAssistant({ onSwapAction, tokens, balances, wallet
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const handleProviderChange = (newProvider: "groq" | "gemini") => {
-    if (newProvider === provider) return;
     setProvider(newProvider);
     setChat([]);
     setContext({});

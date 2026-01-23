@@ -509,7 +509,6 @@ export default function SwapInterface() {
         });
         
         // Use getAmountsOut for precise 1 unit calculation
-        // 1 EURC -> USDC always to determine base rate for both chart and swap
         const eurcAddress = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`;
         const usdcAddress = USDC_ADDRESS as `0x${string}`;
         const amountIn = parseUnits("1", 6);
@@ -521,16 +520,14 @@ export default function SwapInterface() {
           args: [amountIn, [eurcAddress, usdcAddress]]
         }) as bigint[];
         
-        // 1 EURC -> X USDC (Standard rate returned by pool for 1 EURC)
         const eurcToUsdcPrice = parseFloat(formatUnits(amounts[1], 6));
         
         if (eurcToUsdcPrice > 0) {
-            // Sync all rates to match EXACTLY what AIAssist uses
             setCurrentRate(eurcToUsdcPrice);
-            
-            // exchangeRate is From -> To for the swap logic
             const normalizedRate = fromToken.symbol === "USDC" ? 1 / eurcToUsdcPrice : eurcToUsdcPrice;
             setExchangeRate(normalizedRate);
+            // Sync chart tick whenever we fetch a new on-chain rate
+            setTick(t => t + 1);
         }
       } catch (e) {
         console.error("Failed to fetch on-chain rate:", e);
@@ -540,7 +537,7 @@ export default function SwapInterface() {
     fetchRate();
     const interval = setInterval(fetchRate, 10000);
     return () => clearInterval(interval);
-  }, [fromToken.symbol]);
+  }, [fromToken.symbol, toToken.symbol]); // Re-fetch if tokens change
 
   const handlePriceUpdate = (price: number) => {
     // Sync both rates to ensure UI and internal logic match on-chain data
@@ -1712,6 +1709,7 @@ export default function SwapInterface() {
                                     setToToken(fromToken);
                                   }
                                   setFromToken(token);
+                                  setTick(t => t + 1);
                                 }} 
                               />
                             </div>
@@ -1736,6 +1734,8 @@ export default function SwapInterface() {
                               onClick={() => {
                                 const t = fromToken; setFromToken(toToken); setToToken(t);
                                 const a = inputAmount; setInputAmount(outputAmount); setOutputAmount(a);
+                                // Trigger chart update if necessary by changing timeframe or forcing re-render
+                                setTick(t => t + 1);
                               }}
                             >
                               <ArrowDown className="w-4 h-4 text-primary" />
@@ -1765,6 +1765,7 @@ export default function SwapInterface() {
                                     setFromToken(toToken);
                                   }
                                   setToToken(token);
+                                  setTick(t => t + 1);
                                 }} 
                               />
                             </div>

@@ -505,6 +505,14 @@ export default function SwapInterface() {
   const itemsPerPage = 20;
   const [globalVolume, setGlobalVolume] = useState(43400.00); 
   const [aiProvider, setAiProvider] = useState<"groq" | "gemini">("groq");
+  const [chatKey, setChatKey] = useState(0);
+  
+  const handleProviderChange = (provider: "groq" | "gemini") => {
+    if (provider !== aiProvider) {
+      setAiProvider(provider);
+      setChatKey(prev => prev + 1);
+    }
+  };
   
   // State for dynamic exchange rate
   // Arc Testnet specific: 1 USDC ≈ 0.085165 EURC
@@ -1695,13 +1703,13 @@ export default function SwapInterface() {
                        {activeTab === "ai" && (
                          <div className="flex bg-[#130b29] p-0.5 rounded-md border border-primary/10 mr-1">
                            <button 
-                             onClick={() => setAiProvider("groq")}
+                             onClick={() => handleProviderChange("groq")}
                              className={`px-2 py-1 text-[10px] font-bold rounded transition-all duration-200 ${aiProvider === "groq" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                            >
                              Groq
                            </button>
                            <button 
-                             onClick={() => setAiProvider("gemini")}
+                             onClick={() => handleProviderChange("gemini")}
                              className={`px-2 py-1 text-[10px] font-bold rounded transition-all duration-200 ${aiProvider === "gemini" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                            >
                              Gemini
@@ -1838,12 +1846,13 @@ export default function SwapInterface() {
                         >
                           <div className="flex-1 overflow-hidden">
                             <AISwapAssistant 
+                              key={`ai-assistant-${chatKey}`}
                               onSwapAction={handleAIAction} 
                               tokens={ARC_TOKENS} 
                               balances={balances}
                               walletConnected={walletConnected}
                               provider={aiProvider}
-                              onProviderChange={setAiProvider}
+                              onProviderChange={handleProviderChange}
                             />
                           </div>
                         </motion.div>

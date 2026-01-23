@@ -1,6 +1,6 @@
 import { Slider } from "@/components/ui/slider";
 import { useState, useEffect, useMemo } from "react";
-import { ArrowDown, ArrowRight, Settings, ChevronDown, Wallet, Info, RefreshCw, ExternalLink, TrendingUp, Activity, AlertCircle, Ghost, Lock, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, Settings, ChevronDown, Wallet, Info, RefreshCw, ExternalLink, TrendingUp, Activity, AlertCircle, Ghost, Lock, Sparkles, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -1361,6 +1361,7 @@ export default function SwapInterface() {
   // Handle tab switch
   const handleTabSwitch = (tab: "swap" | "ai") => {
     setActiveTab(tab);
+    // Clear swap inputs when switching to AI Assist
     if (tab === "ai") {
       setInputAmount("");
       setOutputAmount("");
@@ -1634,19 +1635,25 @@ export default function SwapInterface() {
                 <Card className="w-full bg-[#1c1038]/90 backdrop-blur-md border-[#3b1f69]/50 shadow-xl rounded-[24px] overflow-hidden">
                   {/* Header */}
                   <div className="p-5 flex justify-between items-center border-b border-[#3b1f69]/30 bg-[#1c1038]/30">
-                    <div className="flex gap-4">
-                      <button 
-                        onClick={() => setActiveTab("swap")}
-                        className={`text-xl font-bold tracking-tight transition-colors ${activeTab === "swap" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    <div className="flex bg-[#1c1038]/60 rounded-xl p-1 border border-[#3b1f69]/50 shadow-inner">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleTabSwitch("swap")}
+                        className={`px-6 h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${activeTab === "swap" ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}
                       >
+                        <ArrowRightLeft className="w-3.5 h-3.5" />
                         Swap
-                      </button>
-                      <button 
-                        onClick={() => setActiveTab("ai")}
-                        className={`text-xl font-bold tracking-tight transition-colors flex items-center gap-2 ${activeTab === "ai" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleTabSwitch("ai")}
+                        className={`px-6 h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${activeTab === "ai" ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}
                       >
-                        AI Assist <Sparkles className="w-4 h-4 fill-primary/20 text-primary" />
-                      </button>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        AI Assist
+                      </Button>
                     </div>
                     <SettingsDialog 
                       open={isSettingsOpen} 
@@ -1776,7 +1783,7 @@ export default function SwapInterface() {
                     </AnimatePresence>
 
                     {/* Detailed Info Section */}
-                    {inputAmount && (
+                    {activeTab === "swap" && inputAmount && (
                       <div className="bg-background/40 rounded-xl p-3 space-y-2 mt-2 border border-border/40">
                         <div className="flex flex-col gap-1 text-[11px] text-muted-foreground mb-1">
                           <div className="flex items-center gap-1">

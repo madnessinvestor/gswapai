@@ -499,6 +499,7 @@ export default function SwapInterface() {
   // The price is now driven by the PriceChart component via callback
   // which ensures visual synchronization.
   
+  // Fetch Live Exchange Rate from Pool
   useEffect(() => {
     const fetchRate = async () => {
       try {
@@ -508,7 +509,7 @@ export default function SwapInterface() {
         });
         
         // Use getAmountsOut for precise 1 unit calculation
-        // 1 EURC -> USDC always to determine base rate
+        // 1 EURC -> USDC always to determine base rate for both chart and swap
         const eurcAddress = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`;
         const usdcAddress = USDC_ADDRESS as `0x${string}`;
         const amountIn = parseUnits("1", 6);
@@ -523,11 +524,13 @@ export default function SwapInterface() {
         const eurcToUsdcRate = parseFloat(formatUnits(amounts[1], 6));
         
         if (eurcToUsdcRate > 0) {
-            // If fromToken is USDC, we want 1 USDC = ? EURC (which is 1 / eurcToUsdcRate)
-            // If fromToken is EURC, we want 1 EURC = ? USDC (which is eurcToUsdcRate)
+            // Update both rates
+            // currentRate is always EURC/USDC for the chart header
+            setCurrentRate(eurcToUsdcRate);
+            
+            // exchangeRate is From -> To for the swap logic
             const normalizedRate = fromToken.symbol === "USDC" ? 1 / eurcToUsdcRate : eurcToUsdcRate;
             setExchangeRate(normalizedRate);
-            setCurrentRate(normalizedRate);
         }
       } catch (e) {
         console.error("Failed to fetch on-chain rate:", e);

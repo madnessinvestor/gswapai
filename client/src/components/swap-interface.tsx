@@ -1668,7 +1668,7 @@ export default function SwapInterface() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Swap Card (Left) */}
             <div className="lg:col-span-5 order-1">
-                <Card className="w-full bg-[#1c1038]/90 backdrop-blur-md border-[#3b1f69]/50 shadow-xl rounded-[24px] overflow-hidden">
+                <Card className="w-full min-h-[580px] bg-[#1c1038]/90 backdrop-blur-md border-[#3b1f69]/50 shadow-xl rounded-[24px] overflow-hidden">
                   {/* Header */}
                   <div className="p-5 flex justify-between items-center border-b border-[#3b1f69]/30 bg-[#1c1038]/30">
                     <div className="flex bg-[#1c1038]/60 rounded-xl p-1 border border-[#3b1f69]/50 shadow-inner">
@@ -1836,7 +1836,7 @@ export default function SwapInterface() {
                           exit={{ opacity: 0, x: -10 }}
                           className="flex flex-col flex-1"
                         >
-                          <div className="flex-1 overflow-hidden">
+                          <div className="flex-1 overflow-hidden min-h-[420px]">
                             <AISwapAssistant 
                               onSwapAction={handleAIAction} 
                               tokens={ARC_TOKENS} 

@@ -199,40 +199,37 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
 
     async function getPrice() {
       try {
-        // 1 EURC (6 decimals) -> USDC (6 decimals)
         const eurcAddr = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a";
         const usdcAddr = "0x3600000000000000000000000000000000000000";
         const amountIn = ethers.parseUnits("1", 6);
+        
+        // Always fetch EURC -> USDC rate as the base
         const amounts = await pool.getAmountsOut(amountIn, [eurcAddr, usdcAddr]);
-        let price = Number(amounts[1]) / 1e6;
+        const eurcToUsdcPrice = Number(amounts[1]) / 1e6;
         
-        // Notify parent component of the REAL on-chain price (EURC -> USDC)
-        if (onPriceUpdate && price > 0) {
-            onPriceUpdate(price);
+        // Notify parent of the base rate (EURC/USDC)
+        if (onPriceUpdate && eurcToUsdcPrice > 0) {
+            onPriceUpdate(eurcToUsdcPrice);
         }
 
-        // Handle case where price from contract is far from market (Arc testnet volatility)
-        if (price > 25 || price < 0.01) {
-            price = 12.0231;
+        let finalPrice = eurcToUsdcPrice;
+        
+        // Validation with fallback
+        if (finalPrice > 25 || finalPrice < 0.01) {
+            finalPrice = 12.0231;
         }
         
-        // If the user's pair is USDC -> EURC, the chart series should show the inverted price
-        let displayPrice = price;
+        // If we are looking at USDC/EURC, the chart should show 1 / price
         if (fromSymbol === "USDC") {
-            displayPrice = 1 / price;
+            return 1 / finalPrice;
         }
 
-        return displayPrice;
+        return finalPrice;
 
       } catch (e) {
-        console.warn("Error reading price (using mock for demo if needed):", e);
-        
-        let mockPrice = 12.0231;
-        if (fromSymbol === "USDC") {
-            mockPrice = 1 / 12.0231;
-        }
-        
-        return mockPrice;
+        console.warn("Error reading price:", e);
+        const fallback = 12.0231;
+        return fromSymbol === "USDC" ? 1 / fallback : fallback;
       }
     }
 

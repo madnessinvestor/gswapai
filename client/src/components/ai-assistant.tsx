@@ -66,6 +66,13 @@ export default function AISwapAssistant({ onSwapAction, tokens, balances, wallet
   const [speechSupported, setSpeechSupported] = useState(false);
   const [isExecutingSwap, setIsExecutingSwap] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [chat, isLoading]);
 
   const handleProviderChange = (newProvider: "groq" | "gemini") => {
     onProviderChange(newProvider);
@@ -245,7 +252,10 @@ export default function AISwapAssistant({ onSwapAction, tokens, balances, wallet
 
   return (
     <div className="flex flex-col h-[400px]">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-primary/20">
+      <div 
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-primary/20 scroll-smooth"
+      >
         <AnimatePresence initial={false}>
           {chat.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-2 opacity-50">

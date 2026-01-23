@@ -203,33 +203,29 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
         const usdcAddr = "0x3600000000000000000000000000000000000000";
         const amountIn = ethers.parseUnits("1", 6);
         
-        // Always fetch EURC -> USDC rate as the base
-        const amounts = await pool.getAmountsOut(amountIn, [eurcAddr, usdcAddr]);
-        const eurcToUsdcPrice = Number(amounts[1]) / 1e6;
+        // Fetch USDC -> EURC rate
+        const amounts = await pool.getAmountsOut(amountIn, [usdcAddr, eurcAddr]);
+        const usdcToEurcPrice = Number(amounts[1]) / 1e6;
+        
+        // The base rate for global UI is EURC/USDC (1 / usdcToEurc)
+        const eurcToUsdcPrice = 1 / usdcToEurcPrice;
         
         // Notify parent of the base rate (EURC/USDC)
         if (onPriceUpdate && eurcToUsdcPrice > 0) {
             onPriceUpdate(eurcToUsdcPrice);
         }
 
-        let finalPrice = eurcToUsdcPrice;
-        
-        // Validation with fallback
-        if (finalPrice > 25 || finalPrice < 0.01) {
-            finalPrice = 12.0231;
-        }
-        
-        // If we are looking at USDC/EURC, the chart should show 1 / price
+        // If we are looking at USDC/EURC, return usdcToEurcPrice
         if (fromSymbol === "USDC") {
-            return 1 / finalPrice;
+            return usdcToEurcPrice;
         }
 
-        return finalPrice;
+        return eurcToUsdcPrice;
 
       } catch (e) {
         console.warn("Error reading price:", e);
-        const fallback = 12.0231;
-        return fromSymbol === "USDC" ? 1 / fallback : fallback;
+        const fallbackUsdcToEurc = 0.083173; 
+        return fromSymbol === "USDC" ? fallbackUsdcToEurc : 1 / fallbackUsdcToEurc;
       }
     }
 

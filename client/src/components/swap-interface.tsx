@@ -518,18 +518,18 @@ export default function SwapInterface() {
           address: "0x284C5Afc100ad14a458255075324fA0A9dfd66b1" as `0x${string}`,
           abi: ROUTER_ABI,
           functionName: 'getAmountsOut',
-          args: [amountIn, [eurcAddress, usdcAddress]]
+          args: [amountIn, [USDC_ADDRESS as `0x${string}`, "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`]]
         }) as bigint[];
         
-        const eurcToUsdcRate = parseFloat(formatUnits(amounts[1], 6));
+        const usdcToEurcRate = parseFloat(formatUnits(amounts[1], 6));
         
-        if (eurcToUsdcRate > 0) {
+        if (usdcToEurcRate > 0) {
             // Update both rates
-            // currentRate is always EURC/USDC for the chart header
-            setCurrentRate(eurcToUsdcRate);
+            // currentRate is always EURC/USDC for the chart header (1 / usdcToEurcRate)
+            setCurrentRate(1 / usdcToEurcRate);
             
             // exchangeRate is From -> To for the swap logic
-            const normalizedRate = fromToken.symbol === "USDC" ? 1 / eurcToUsdcRate : eurcToUsdcRate;
+            const normalizedRate = fromToken.symbol === "USDC" ? usdcToEurcRate : 1 / usdcToEurcRate;
             setExchangeRate(normalizedRate);
         }
       } catch (e) {

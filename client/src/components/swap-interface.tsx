@@ -544,10 +544,14 @@ export default function SwapInterface() {
 
   const handlePriceUpdate = (price: number) => {
     // Sync both rates to ensure UI and internal logic match on-chain data
-    if (price > 0 && Math.abs(price - currentRate) > 0.000001) {
-      const normalizedPrice = fromToken.symbol === "USDC" ? price : 1 / price;
-      setExchangeRate(normalizedPrice);
+    // Only update if the price is significantly different to avoid feedback loops
+    if (price > 0 && Math.abs(price - currentRate) > 0.00000001) {
       setCurrentRate(price);
+      
+      // Update the derived exchangeRate used for swapping
+      // currentRate is ALWAYS 1 EURC = X USDC
+      const normalizedPrice = fromToken.symbol === "USDC" ? 1 / price : price;
+      setExchangeRate(normalizedPrice);
     }
   };
 

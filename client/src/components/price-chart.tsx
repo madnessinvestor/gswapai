@@ -212,12 +212,13 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
             onPriceUpdate(eurcToUsdcPrice);
         }
 
-        // Return the correct rate based on the visual pair selected in chart
-        if (fromSymbol === "USDC") {
-            return 1 / eurcToUsdcPrice;
-        }
-
-        return eurcToUsdcPrice;
+        // Return the correct rate for the chart display (always EURC/USDC price)
+        const finalPrice = eurcToUsdcPrice;
+        
+        // Update displayed price format depending on value
+        setCurrentPrice(finalPrice < 1 ? finalPrice.toFixed(6) : finalPrice.toFixed(4));
+        
+        return finalPrice;
       } catch (e) {
         console.warn("Error reading price:", e);
         const fallbackUsdcToEurc = 0.083173; 

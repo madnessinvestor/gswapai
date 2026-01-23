@@ -1,6 +1,7 @@
 import { Slider } from "@/components/ui/slider";
 import { useState, useEffect, useMemo } from "react";
-import { ArrowDown, ArrowRight, Settings, ChevronDown, Wallet, Info, RefreshCw, ExternalLink, TrendingUp, Activity, AlertCircle, Ghost, Lock, Sparkles, ArrowRightLeft } from "lucide-react";
+import { ArrowDown, ArrowRight, Settings, ChevronDown, Wallet, Info, RefreshCw, ExternalLink, TrendingUp, Activity, AlertCircle, Ghost, Lock, Sparkles, ArrowRightLeft, Twitter, Github, Youtube, Linkedin, Instagram, Send, MessageSquare } from "lucide-react";
+import { SiFarcaster } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -2129,7 +2130,35 @@ export default function SwapInterface() {
       </main>
       
       <footer className="w-full py-6 text-center text-sm text-muted-foreground/50 font-medium">
-        GojoSwap © 2025
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-4">
+            <a href="https://x.com/madnessinvestor" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <Twitter className="w-5 h-5" />
+            </a>
+            <a href="https://github.com/madnessinvestor" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <Github className="w-5 h-5" />
+            </a>
+            <a href="https://www.youtube.com/@madnessinvestor" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <Youtube className="w-5 h-5" />
+            </a>
+            <a href="https://farcaster.xyz/madnessinvestor" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <SiFarcaster className="w-5 h-5" />
+            </a>
+            <a href="https://www.linkedin.com/in/madness-investor-3621292a5/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <Linkedin className="w-5 h-5" />
+            </a>
+            <a href="https://www.instagram.com/madnessinvestor" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <Instagram className="w-5 h-5" />
+            </a>
+            <a href="https://web.telegram.org/k/#@madnessinvestor" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <Send className="w-5 h-5" />
+            </a>
+            <a href="https://discord.com/users/madnessinvestor" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <MessageSquare className="w-5 h-5" />
+            </a>
+          </div>
+          <p className="text-xs text-muted-foreground">GojoSwap @ 2026 - by Madness</p>
+        </div>
       </footer>
     </div>
   );

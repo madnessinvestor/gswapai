@@ -1836,11 +1836,6 @@ export default function SwapInterface() {
                           exit={{ opacity: 0, x: -10 }}
                           className="flex flex-col flex-1"
                         >
-                          <div className="p-3 border-b border-primary/10 flex justify-end items-center bg-[#2d1b4d]/20">
-                            <div className="flex flex-col items-end gap-0.5">
-                              <span className="text-[9px] text-muted-foreground italic opacity-70">Powered by Strongest AI</span>
-                            </div>
-                          </div>
                           <div className="flex-1 overflow-hidden">
                             <AISwapAssistant 
                               onSwapAction={handleAIAction} 

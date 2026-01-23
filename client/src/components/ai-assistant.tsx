@@ -96,7 +96,12 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
       };
 
       recognition.onend = () => {
-        setIsListening(false);
+        // Quando o reconhecimento terminar naturalmente (silêncio), 
+        // mantemos o estado visual de "ouvindo" por mais 5 segundos
+        // para dar tempo ao usuário de ver o que foi transcrito ou continuar falando
+        setTimeout(() => {
+          setIsListening(false);
+        }, 5000);
       };
 
       recognitionRef.current = recognition;

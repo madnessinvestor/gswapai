@@ -65,6 +65,9 @@ export async function registerRoutes(
             functionName: 'getAmountsOut',
             args: [amount, [fromAddr, toAddr]]
           }) as bigint[];
+          
+          // Se fromAddr for EURC, queremos saber quanto USDC recebemos
+          // Se fromAddr for USDC, queremos saber quanto EURC recebemos
           return formatUnits(amounts[1], 6);
         } catch (e) {
           console.error("Quote error:", e);

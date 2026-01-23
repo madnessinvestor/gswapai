@@ -521,15 +521,16 @@ export default function SwapInterface() {
           args: [amountIn, [USDC_ADDRESS as `0x${string}`, "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`]]
         }) as bigint[];
         
+        // 1 USDC -> X EURC
         const usdcToEurcRate = parseFloat(formatUnits(amounts[1], 6));
         
         if (usdcToEurcRate > 0) {
-            // Update both rates
-            // currentRate is always EURC/USDC for the chart header (1 / usdcToEurcRate)
-            setCurrentRate(1 / usdcToEurcRate);
+            // currentRate should be EURC/USDC (How many USDC for 1 EURC)
+            const eurcToUsdcPrice = 1 / usdcToEurcRate;
+            setCurrentRate(eurcToUsdcPrice);
             
             // exchangeRate is From -> To for the swap logic
-            const normalizedRate = fromToken.symbol === "USDC" ? usdcToEurcRate : 1 / usdcToEurcRate;
+            const normalizedRate = fromToken.symbol === "USDC" ? usdcToEurcRate : eurcToUsdcPrice;
             setExchangeRate(normalizedRate);
         }
       } catch (e) {

@@ -428,6 +428,23 @@ const formatTimeAgo = (timestamp: number) => {
     );
   };
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const OTHER_DAPPS = [
+  { title: "ArcRevoke", url: "https://arcrevoke.up.railway.app/", icon: Lock },
+  { title: "ArcLottery", url: "https://arclottery.up.railway.app/", icon: Sparkles },
+  { title: "PolyDoomArc", url: "https://polydoomarc.up.railway.app/", icon: Ghost },
+  { title: "ArcDashboard", url: "https://arcdashboard.up.railway.app/", icon: TrendingUp },
+  { title: "ArcMiner", url: "https://arcminer.up.railway.app/", icon: Activity },
+  { title: "ArcMessage", url: "https://messagearc-onchain.up.railway.app/", icon: MessageSquare },
+  { title: "ArcSBT", url: "https://mintsbtarc-onchain.up.railway.app/", icon: Sparkles }
+];
+
 export default function SwapInterface() {
   const { toast } = useToast();
   const currentTokens = ARC_TOKENS;

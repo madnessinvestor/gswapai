@@ -540,16 +540,8 @@ export default function SwapInterface() {
   }, [fromToken.symbol, toToken.symbol]); // Re-fetch if tokens change
 
   const handlePriceUpdate = (price: number) => {
-    // Sync both rates to ensure UI and internal logic match on-chain data
-    // Only update if the price is significantly different to avoid feedback loops
-    if (price > 0 && Math.abs(price - currentRate) > 0.00000001) {
-      setCurrentRate(price);
-      
-      // Update the derived exchangeRate used for swapping
-      // currentRate is ALWAYS 1 EURC = X USDC
-      const normalizedPrice = fromToken.symbol === "USDC" ? 1 / price : price;
-      setExchangeRate(normalizedPrice);
-    }
+    // DO NOT update internal state from chart to avoid feedback loops and jumps
+    // The chart should follow the on-chain currentRate
   };
 
   // Simulate Global Volume Ticker
@@ -1938,7 +1930,7 @@ export default function SwapInterface() {
                             timeframe={chartTimeframe} 
                             fromSymbol={fromToken.symbol} 
                             toSymbol={toToken.symbol}
-                            currentRate={exchangeRate}
+                            currentRate={currentRate} // Use EURC/USDC rate consistently for chart
                             onPriceUpdate={handlePriceUpdate}
                         />
                      </div>

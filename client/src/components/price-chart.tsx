@@ -185,7 +185,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
     // ARC CONFIGURATION
     // -------------------------
     const provider = new ethers.JsonRpcProvider(
-      "https://rpc-testnet.arc.network/"
+      "https://rpc.testnet.arc.network"
     );
 
     const poolAddress = "0x284C5Afc100ad14a458255075324fA0A9dfd66b1";

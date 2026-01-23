@@ -68,6 +68,7 @@ export async function registerRoutes(
           
           // Se fromAddr for EURC, queremos saber quanto USDC recebemos
           // Se fromAddr for USDC, queremos saber quanto EURC recebemos
+          // O contrato retorna [amountIn, amountOut]
           return formatUnits(amounts[1], 6);
         } catch (e) {
           console.error("Quote error:", e);

@@ -61,7 +61,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
       switch(period) {
           case 'RealTime': 
               count = 100; 
-              volatility = 0.0002; // Very low noise for 15s updates
+              volatility = 0; // No noise for 15s updates to match pool exactly
               break;
           case '15m': 
               count = 96; // 24 hours of 15m candles
@@ -124,7 +124,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
           
           data.push({
               time: (alignedNow - (intervalsAgo * interval)) as Time,
-              value: rawValues[i] + shift
+              value: rawValues[i]
           });
       }
 
@@ -227,11 +227,8 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
             price = 1 / price;
         }
 
-        // Add extremely subtle noise to ensure the UI "updates" visually
-        // even if the testnet price is static. 
-        // 0.005% variation is invisible for trading but visible for "liveness"
-        const noise = (Math.random() * (price * 0.00005) - (price * 0.000025));
-        return price + noise;
+        // Remove noise to match real on-chain price consistently
+        return price;
 
       } catch (e) {
         console.warn("Error reading price (using mock for demo if needed):", e);

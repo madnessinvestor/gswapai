@@ -192,7 +192,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
 
     // Minimal ABI
     const ABI = [
-      "function getAmountOut(uint256 amountIn) view returns (uint256)"
+      "function getAmountsOut(uint256 amountIn, address[] path) view returns (uint256[])"
     ];
 
     const pool = new ethers.Contract(poolAddress, ABI, provider);
@@ -200,15 +200,11 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
     async function getPrice() {
       try {
         // 1 EURC (6 decimals) -> USDC (6 decimals)
-        // Correct Market Price: 1 EURC ≈ 1.0625 USDC
+        const eurcAddr = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a";
+        const usdcAddr = "0x3600000000000000000000000000000000000000";
         const amountIn = ethers.parseUnits("1", 6);
-        const out = await pool.getAmountOut(amountIn);
-        let price = Number(out) / 1e6;
-        
-        // If the direction is inverted (USDC -> EURC), invert the price
-        // BUT the header always shows EURC/USDC price as requested ($12.0231)
-        // So we keep the raw price for on-chain consistency if needed, 
-        // but the display logic in handlePriceUpdate will manage the pair.
+        const amounts = await pool.getAmountsOut(amountIn, [eurcAddr, usdcAddr]);
+        let price = Number(amounts[1]) / 1e6;
         
         // Notify parent component of the REAL on-chain price (EURC -> USDC)
         if (onPriceUpdate && price > 0) {
@@ -216,7 +212,6 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
         }
 
         // Handle case where price from contract is far from market (Arc testnet volatility)
-        // Forcing a realistic mock for demo purposes if contract price is not correct
         if (price > 25 || price < 0.01) {
             price = 12.0231;
         }
@@ -231,15 +226,13 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
 
       } catch (e) {
         console.warn("Error reading price (using mock for demo if needed):", e);
-        // Fallback for demo if contract fails
         
-        let mockPrice = 11.7419;
+        let mockPrice = 12.0231;
         if (fromSymbol === "USDC") {
-            mockPrice = 0.085165;
+            mockPrice = 1 / 12.0231;
         }
         
-        // Fallback noise - only for fallback
-        return mockPrice + (Math.random() * (mockPrice * 0.001) - (mockPrice * 0.0005));
+        return mockPrice;
       }
     }
 

@@ -1249,7 +1249,7 @@ export default function SwapInterface() {
                 return updated;
               });
 
-          const isBuy = fromToken.symbol === 'USDC';
+          const isBuyDirection = fromToken.symbol === 'USDC';
           const inputAmtValue = parseFloat(inputAmount);
           const outputAmtValue = parseFloat(outputAmount);
 
@@ -1491,13 +1491,13 @@ export default function SwapInterface() {
             return updated;
           });
 
-          const isBuy = fromTokenObj.symbol === 'USDC';
-          const inputAmtValue = parseFloat(amount);
-          const outputAmtValue = inputAmtValue * currentRate;
+          const isBuyAISwap = fromTokenObj.symbol === 'USDC';
+          const inputAmtValueAI = parseFloat(amount);
+          const outputAmtValueAI = inputAmtValueAI * currentRate;
 
           // Confirmation logic fix for AI
-          const soldAmount = inputAmtValue.toFixed(4);
-          const receivedAmount = outputAmtValue.toFixed(6);
+          const soldAmountAI = inputAmtValueAI.toFixed(4);
+          const receivedAmountAI = outputAmtValueAI.toFixed(6);
 
           toast({ 
             title: "Swap Successful", 
@@ -1505,8 +1505,8 @@ export default function SwapInterface() {
               <div className="flex flex-col gap-1">
                 <p>Balances updated.</p>
                 <div className="text-xs font-mono mt-1 bg-green-500/10 p-2 rounded border border-green-500/20">
-                  <p>You sold <span className="font-bold">{soldAmount} {fromTokenObj.symbol}</span></p>
-                  <p>Received <span className="font-bold">{receivedAmount} {toTokenObj.symbol}</span></p>
+                  <p>You sold <span className="font-bold">{soldAmountAI} {fromTokenObj.symbol}</span></p>
+                  <p>Received <span className="font-bold">{receivedAmountAI} {toTokenObj.symbol}</span></p>
                 </div>
               </div>
             ),

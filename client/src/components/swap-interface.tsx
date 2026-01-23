@@ -1930,7 +1930,7 @@ export default function SwapInterface() {
                             timeframe={chartTimeframe} 
                             fromSymbol={fromToken.symbol} 
                             toSymbol={toToken.symbol}
-                            currentRate={currentRate} // Use EURC/USDC rate consistently for chart
+                            currentRate={exchangeRate} // Use direction-aware exchangeRate for chart
                             onPriceUpdate={handlePriceUpdate}
                         />
                      </div>

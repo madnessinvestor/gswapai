@@ -212,8 +212,8 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
             onPriceUpdate(eurcToUsdcPrice);
         }
 
-        // Return the correct rate for the chart display (always EURC/USDC price)
-        const finalPrice = eurcToUsdcPrice;
+        // Return the correct rate based on the requested pair direction
+        const finalPrice = fromSymbol === "USDC" ? 1 / eurcToUsdcPrice : eurcToUsdcPrice;
         
         // Update displayed price format depending on value
         setCurrentPrice(finalPrice < 1 ? finalPrice.toFixed(6) : finalPrice.toFixed(4));

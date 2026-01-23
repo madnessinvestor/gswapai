@@ -1271,6 +1271,9 @@ export default function SwapInterface() {
               });
 
           const soldAmount = parseFloat(currentInputAmount).toFixed(4);
+          // Fixed calculation: outputAmount is already calculated correctly by the useEffect hook
+          // based on the exchangeRate (which is From -> To). 
+          // So we just use currentOutputAmount directly which is already set in the state.
           const receivedAmount = parseFloat(currentOutputAmount).toFixed(6);
 
           toast({ 
@@ -1520,7 +1523,9 @@ export default function SwapInterface() {
 
           const isBuyAISwap = fromTokenObj.symbol === 'USDC';
           const inputAmtValueAI = parseFloat(amount);
-          const outputAmtValueAI = inputAmtValueAI * currentRate;
+          // Fixed calculation: If selling USDC (fromToken is USDC), output is input * (1/currentRate)
+          const rateAI = fromTokenObj.symbol === "USDC" ? 1 / currentRate : currentRate;
+          const outputAmtValueAI = inputAmtValueAI * rateAI;
 
           // Confirmation logic fix for AI
           const soldAmountAI = inputAmtValueAI.toFixed(4);

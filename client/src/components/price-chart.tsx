@@ -219,7 +219,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
         // If price is > 5, it's likely the old 7.56 rate or similar
         // Forcing a realistic mock for demo purposes if contract price is not correct
         if (price > 25 || price < 0.01) {
-            price = 11.7419;
+            price = 12.0231;
         }
         
         // If the user's pair is USDC -> EURC, the chart should show the inverted price
@@ -256,7 +256,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
 
     // We'll use a base price around 7.56 (or 1/7.56) to start generating history
     // Use effectiveCurrentRate if available as the base anchor
-    const basePrice = effectiveCurrentRate || (fromSymbol === "USDC" ? 0.085165 : 11.7419);
+    const basePrice = effectiveCurrentRate || (fromSymbol === "USDC" ? 0.085165 : 12.0231);
     
     // Pass effectiveCurrentRate as the target end price to ensure continuity
     const initialData = generateInitialData(basePrice, timeframe, effectiveCurrentRate);

@@ -1888,7 +1888,7 @@ export default function SwapInterface() {
                        </div>
                     )}
                     
-                    {isInsufficientBalance && (
+                    {activeTab === "swap" && isInsufficientBalance && (
                        <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2">
                           <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
                           <div>
@@ -1899,6 +1899,7 @@ export default function SwapInterface() {
                     )}
                   </div>
 
+                  {activeTab === "swap" && (
                   <div className="p-4 pt-0">
                     {needsApproval ? (
                          <Button 
@@ -1923,6 +1924,7 @@ export default function SwapInterface() {
                     )}
                     
                   </div>
+                  )}
                 </Card>
             </div>
 

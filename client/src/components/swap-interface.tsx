@@ -507,23 +507,25 @@ export default function SwapInterface() {
           transport: http()
         });
         
-        // Use getAmountOut for precise 1 unit calculation
-        // 1 EURC -> USDC
+        // Use getAmountsOut for precise 1 unit calculation
+        // 1 EURC -> USDC always to determine base rate
         const eurcAddress = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`;
+        const usdcAddress = USDC_ADDRESS as `0x${string}`;
         const amountIn = parseUnits("1", 6);
         
-        const amountOut = await publicClient.readContract({
+        const amounts = await publicClient.readContract({
           address: "0x284C5Afc100ad14a458255075324fA0A9dfd66b1" as `0x${string}`,
           abi: ROUTER_ABI,
-          functionName: 'getAmountOut',
-          args: [amountIn]
-        }) as bigint;
+          functionName: 'getAmountsOut',
+          args: [amountIn, [eurcAddress, usdcAddress]]
+        }) as bigint[];
         
-        const rate = parseFloat(formatUnits(amountOut, 6));
+        const eurcToUsdcRate = parseFloat(formatUnits(amounts[1], 6));
         
-        if (rate > 0) {
-            // This is the EURC -> USDC rate
-            const normalizedRate = fromToken.symbol === "USDC" ? 1 / rate : rate;
+        if (eurcToUsdcRate > 0) {
+            // If fromToken is USDC, we want 1 USDC = ? EURC (which is 1 / eurcToUsdcRate)
+            // If fromToken is EURC, we want 1 EURC = ? USDC (which is eurcToUsdcRate)
+            const normalizedRate = fromToken.symbol === "USDC" ? 1 / eurcToUsdcRate : eurcToUsdcRate;
             setExchangeRate(normalizedRate);
             setCurrentRate(normalizedRate);
         }
@@ -533,9 +535,9 @@ export default function SwapInterface() {
     };
 
     fetchRate();
-    const interval = setInterval(fetchRate, 10000); // 10s sync
+    const interval = setInterval(fetchRate, 10000);
     return () => clearInterval(interval);
-  }, [fromToken]);
+  }, [fromToken.symbol]);
 
   const handlePriceUpdate = (price: number) => {
     // Sync both rates to ensure UI and internal logic match on-chain data

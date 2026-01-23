@@ -1358,6 +1358,16 @@ export default function SwapInterface() {
 
   const [activeTab, setActiveTab] = useState<"swap" | "ai">("swap");
 
+  // Handle tab switch
+  const handleTabSwitch = (tab: "swap" | "ai") => {
+    setActiveTab(tab);
+    if (tab === "ai") {
+      setInputAmount("");
+      setOutputAmount("");
+      setInputPercentage(0);
+    }
+  };
+
   const handleAIAction = async (fromTokenObj: any, toTokenObj: any, amount: string) => {
     try {
       // Sync the state first

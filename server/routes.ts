@@ -51,7 +51,21 @@ export async function registerRoutes(
 ): Promise<Server> {
   app.post("/api/ai/swap", async (req, res) => {
     try {
-      const { message, tokens, history, pendingSwap, context } = req.body;
+      const { message, tokens, history, pendingSwap, context, status } = req.body;
+
+      if (status === "TRANSACTION_CANCELLED") {
+        return res.json({
+          action: "CHAT",
+          response: "Tsk. You cancelled it? I guess even the strongest can have second thoughts. No problem, let me know if you want to try again."
+        });
+      }
+
+      if (status === "INSUFFICIENT_FUNDS") {
+        return res.json({
+          action: "CHAT",
+          response: "Your balance is as empty as the Void! You don't have enough tokens for this swap. Go get some more and come back."
+        });
+      }
 
       // Helper to get real on-chain quote
       const getOnChainQuote = async (amountIn: string, fromSym: string, toSym: string) => {

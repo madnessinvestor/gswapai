@@ -503,7 +503,8 @@ export default function SwapInterface() {
   const [currentPage, setCurrentPage] = useState(1);
   const [inputPercentage, setInputPercentage] = useState(0);
   const itemsPerPage = 20;
-  const [globalVolume, setGlobalVolume] = useState(43400.00); // Simulated start volume to match $43.40K example
+  const [globalVolume, setGlobalVolume] = useState(43400.00); 
+  const [aiProvider, setAiProvider] = useState<"groq" | "gemini">("groq");
   
   // State for dynamic exchange rate
   // Arc Testnet specific: 1 USDC ≈ 0.085165 EURC
@@ -1815,13 +1816,44 @@ export default function SwapInterface() {
                           initial={{ opacity: 0, x: 10 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -10 }}
+                          className="flex flex-col flex-1"
                         >
-                          <AISwapAssistant 
-                            onSwapAction={handleAIAction} 
-                            tokens={ARC_TOKENS} 
-                            balances={balances}
-                            walletConnected={walletConnected}
-                          />
+                          <div className="p-3 border-b border-primary/10 flex justify-between items-center bg-[#2d1b4d]/20">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-primary/20 rounded-lg">
+                                <Sparkles className="w-4 h-4 text-primary shadow-[0_0_8px_rgba(168,85,247,0.4)]" />
+                              </div>
+                              <span className="font-bold text-sm tracking-tight">AI Assist</span>
+                            </div>
+                            
+                            <div className="flex flex-col items-end gap-0.5">
+                              <div className="flex bg-[#130b29] p-0.5 rounded-md border border-primary/10">
+                                <button 
+                                  onClick={() => setAiProvider("groq")}
+                                  className={`px-3 py-1 text-[10px] font-bold rounded transition-all duration-200 ${aiProvider === "groq" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                  Groq
+                                </button>
+                                <button 
+                                  onClick={() => setAiProvider("gemini")}
+                                  className={`px-3 py-1 text-[10px] font-bold rounded transition-all duration-200 ${aiProvider === "gemini" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                  Gemini
+                                </button>
+                              </div>
+                              <span className="text-[9px] text-muted-foreground italic opacity-70">Powered by Strongest AI</span>
+                            </div>
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                            <AISwapAssistant 
+                              onSwapAction={handleAIAction} 
+                              tokens={ARC_TOKENS} 
+                              balances={balances}
+                              walletConnected={walletConnected}
+                              provider={aiProvider}
+                              onProviderChange={setAiProvider}
+                            />
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>

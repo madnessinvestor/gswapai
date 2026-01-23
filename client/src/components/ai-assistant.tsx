@@ -63,6 +63,7 @@ export default function AISwapAssistant({ onSwapAction, tokens, balances, wallet
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [isExecutingSwap, setIsExecutingSwap] = useState(false);
+  const [provider, setProvider] = useState<"groq" | "gemini">("groq");
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
@@ -147,7 +148,8 @@ export default function AISwapAssistant({ onSwapAction, tokens, balances, wallet
           tokens,
           history: chat,
           pendingSwap,
-          context
+          context,
+          provider
         }),
       });
 
@@ -236,6 +238,23 @@ export default function AISwapAssistant({ onSwapAction, tokens, balances, wallet
   return (
     <div className="flex flex-col h-[400px]">
       <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-primary/20">
+        <div className="flex justify-between items-center bg-[#2d1b4d]/40 rounded-xl px-4 py-2 border border-primary/10 text-[10px] font-medium mb-2">
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setProvider("groq")}
+              className={`px-2 py-0.5 rounded transition-colors ${provider === "groq" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Groq
+            </button>
+            <button 
+              onClick={() => setProvider("gemini")}
+              className={`px-2 py-0.5 rounded transition-colors ${provider === "gemini" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Gemini
+            </button>
+          </div>
+          <span className="text-muted-foreground italic">Powered by Strongest AI</span>
+        </div>
         {walletConnected && (
           <div className="flex justify-between items-center bg-[#2d1b4d]/40 rounded-xl px-4 py-2 border border-primary/10 text-[11px] font-medium text-muted-foreground">
             <div className="flex items-center gap-2">

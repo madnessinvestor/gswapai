@@ -9,8 +9,8 @@ const groq = process.env.GROQ_API_KEY
   ? new Groq({ apiKey: process.env.GROQ_API_KEY })
   : null;
 
-const gemini = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+const gemini = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)
+  ? new GoogleGenerativeAI((process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) as string)
   : null;
 
 const arcTestnet = {

@@ -60,6 +60,7 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
   const [context, setContext] = useState<{ fromToken?: string; toToken?: string }>({});
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [isExecutingSwap, setIsExecutingSwap] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
@@ -166,6 +167,19 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
         const toTokenObj = tokens.find(t => t.symbol === pendingSwap.to);
         
         if (fromTokenObj && toTokenObj) {
+          setIsExecutingSwap(true);
+          const gojoQuotes = [
+            "Throughout Heaven and Earth, I alone am the honored one.",
+            "Domain Expansion: Infinite Void.",
+            "Cursed Technique Reversal: Red.",
+            "Cursed Technique Lapse: Blue.",
+            "Imaginary Technique: Hollow Purple.",
+            "Don't worry, I'm the strongest.",
+            "It'll be fine. After all, you have me."
+          ];
+          const randomQuote = gojoQuotes[Math.floor(Math.random() * gojoQuotes.length)];
+          setChat((prev) => [...prev, { role: "assistant", content: randomQuote }]);
+
           try {
             // Pass full token objects and ensure amount is correctly passed as a string
             // This should match the signature of handleSwapAction in SwapInterface
@@ -195,7 +209,10 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
             setChat((prev) => [...prev, { role: "assistant", content: feedbackData.response }]);
             setPendingSwap(null);
             setIsLoading(false);
+            setIsExecutingSwap(false);
             return;
+          } finally {
+            setIsExecutingSwap(false);
           }
         } else {
           console.error("Tokens not found for swap:", pendingSwap.from, pendingSwap.to);

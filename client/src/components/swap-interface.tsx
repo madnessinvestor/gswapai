@@ -1016,7 +1016,8 @@ export default function SwapInterface() {
     const num = parseFloat(inputAmount);
     if (isNaN(num)) return;
     
-    setOutputAmount((num * currentRate).toFixed(4));
+    // Use 6 decimals for internal calculation to match AI Assist and Pool exactly
+    setOutputAmount((num * currentRate).toFixed(6));
   }, [inputAmount, fromToken, toToken, currentRate]);
 
   useEffect(() => {

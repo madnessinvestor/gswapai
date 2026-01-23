@@ -58,6 +58,8 @@ export async function registerRoutes(
         try {
           const fromAddr = fromSym === "USDC" ? USDC_ADDRESS : EURC_ADDRESS;
           const toAddr = toSym === "USDC" ? USDC_ADDRESS : EURC_ADDRESS;
+          
+          // Use 6 decimals for both tokens as they are USDC and EURC (both 6 decimals)
           const amount = parseUnits(amountIn, 6);
           const amounts = await publicClient.readContract({
             address: ROUTER_ADDRESS,
@@ -66,9 +68,8 @@ export async function registerRoutes(
             args: [amount, [fromAddr, toAddr]]
           }) as bigint[];
           
-          // Se fromAddr for EURC, queremos saber quanto USDC recebemos
-          // Se fromAddr for USDC, queremos saber quanto EURC recebemos
           // O contrato retorna [amountIn, amountOut]
+          // Format with 6 decimals for maximum precision matching the UI
           return formatUnits(amounts[1], 6);
         } catch (e) {
           console.error("Quote error:", e);

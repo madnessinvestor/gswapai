@@ -206,7 +206,7 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
         let price = Number(out) / 1e6;
         
         // If the direction is inverted (USDC -> EURC), invert the price
-        // BUT the header always shows EURC/USDC price as requested ($11.7444)
+        // BUT the header always shows EURC/USDC price as requested ($12.0231)
         // So we keep the raw price for on-chain consistency if needed, 
         // but the display logic in handlePriceUpdate will manage the pair.
         
@@ -216,19 +216,18 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
         }
 
         // Handle case where price from contract is far from market (Arc testnet volatility)
-        // If price is > 5, it's likely the old 7.56 rate or similar
         // Forcing a realistic mock for demo purposes if contract price is not correct
         if (price > 25 || price < 0.01) {
             price = 12.0231;
         }
         
-        // If the user's pair is USDC -> EURC, the chart should show the inverted price
+        // If the user's pair is USDC -> EURC, the chart series should show the inverted price
+        let displayPrice = price;
         if (fromSymbol === "USDC") {
-            price = 1 / price;
+            displayPrice = 1 / price;
         }
 
-        // Remove noise to match real on-chain price consistently
-        return price;
+        return displayPrice;
 
       } catch (e) {
         console.warn("Error reading price (using mock for demo if needed):", e);

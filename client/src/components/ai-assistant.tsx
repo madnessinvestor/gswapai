@@ -69,7 +69,7 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
       const recognition = new SpeechRecognitionAPI();
       recognition.continuous = false;
       recognition.interimResults = true;
-      recognition.lang = "pt-BR";
+      recognition.lang = "en-US";
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
         let finalTranscript = "";

@@ -9,8 +9,8 @@ const groq = process.env.GROQ_API_KEY
   ? new Groq({ apiKey: process.env.GROQ_API_KEY })
   : null;
 
-const gemini = process.env.GOOGLE_API_KEY
-  ? new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
+const gemini = process.env.GEMINI_API_KEY
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
 
 const arcTestnet = {
@@ -105,10 +105,11 @@ export async function registerRoutes(
       Always return JSON with action and response. For PROPOSE_SWAP, include fromToken, toToken, and amount.
       Valid actions: CHAT, PROPOSE_SWAP, EXECUTE_SWAP, CANCEL_SWAP.`;
 
+      // Select provider (defaults to groq, fallbacks to gemini if groq fails or is not available)
+      const provider = req.body.provider || "groq";
       let aiResponse: any = null;
 
-      // Try Groq first
-      if (groq) {
+      if (provider === "groq" && groq) {
         try {
           const messages = [
             { role: "system" as const, content: systemPrompt },
@@ -125,11 +126,11 @@ export async function registerRoutes(
           aiResponse = JSON.parse(completion.choices[0].message.content || "{}");
           console.log("AI Response from Groq");
         } catch (groqError) {
-          console.error("Groq error, trying Gemini:", groqError);
+          console.error("Groq error, trying Gemini fallback:", groqError);
         }
       }
 
-      // Fallback to Gemini if Groq failed or unavailable
+      // Use Gemini if provider is gemini OR if groq failed/unavailable
       if (!aiResponse && gemini) {
         try {
           const model = gemini.getGenerativeModel({ 

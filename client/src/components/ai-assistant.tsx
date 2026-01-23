@@ -1,9 +1,51 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Send, Bot, User } from "lucide-react";
+import { Sparkles, Send, Bot, User, Mic, MicOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: (() => void) | null;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
 
 interface AISwapAssistantProps {
   onSwapAction: (from: string, to: string, amount: string) => Promise<void>;
@@ -16,6 +58,69 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
   const [isLoading, setIsLoading] = useState(false);
   const [pendingSwap, setPendingSwap] = useState<any>(null);
   const [context, setContext] = useState<{ fromToken?: string; toToken?: string }>({});
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  useEffect(() => {
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognitionAPI) {
+      setSpeechSupported(true);
+      const recognition = new SpeechRecognitionAPI();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = "pt-BR";
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          setMessage(finalTranscript);
+        } else if (interimTranscript) {
+          setMessage(interimTranscript);
+        }
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setMessage("");
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -126,8 +231,20 @@ export default function AISwapAssistant({ onSwapAction, tokens }: AISwapAssistan
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             className="bg-[#130b29] border-primary/20 focus:border-primary"
+            data-testid="input-ai-message"
           />
-          <Button onClick={handleSend} disabled={isLoading} size="icon">
+          {speechSupported && (
+            <Button 
+              onClick={toggleListening} 
+              disabled={isLoading} 
+              size="icon"
+              variant={isListening ? "destructive" : "outline"}
+              data-testid="button-voice-input"
+            >
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </Button>
+          )}
+          <Button onClick={handleSend} disabled={isLoading} size="icon" data-testid="button-send-message">
             <Send className="w-4 h-4" />
           </Button>
         </div>

@@ -718,7 +718,9 @@ export default function SwapInterface() {
 
 
   // Dynamic Chart Data based on pair
-  const chartData = generateChartData(currentRate, currentRate * 0.02, chartTimeframe);
+  // Force chart to use EXACTLY currentRate (1 EURC = X USDC) as base
+  const chartBasePrice = currentRate;
+  const chartData = generateChartData(chartBasePrice, chartBasePrice * 0.005, chartTimeframe);
   const priceChange = fromToken.symbol === "EURC" ? -0.32 : 0.005;
   const priceChangePercent = fromToken.symbol === "EURC" ? 4.15 : 3.8;
   const isPositive = priceChange >= 0;

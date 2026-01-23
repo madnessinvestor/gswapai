@@ -149,6 +149,16 @@ const ROUTER_ABI = [
     stateMutability: 'view',
     inputs: [{ name: 'amountIn', type: 'uint256' }],
     outputs: [{ type: 'uint256' }]
+  },
+  {
+    name: 'getAmountsOut',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'amountIn', type: 'uint256' },
+      { name: 'path', type: 'address[]' }
+    ],
+    outputs: [{ type: 'uint256[]' }]
   }
 ];
 
@@ -483,6 +493,7 @@ export default function SwapInterface() {
   // So 1 EURC = 11.888 USDC
   // Or 1 USDC = 1 / 11.888 = 0.084118 EURC
   const [exchangeRate, setExchangeRate] = useState(0.084118);
+  const [currentRate, setCurrentRate] = useState(0.084118);
 
   // Fetch Live Exchange Rate - REMOVED redundant interval
   // The price is now driven by the PriceChart component via callback
@@ -506,22 +517,27 @@ export default function SwapInterface() {
         }) as bigint[];
         
         const rate = parseFloat(formatUnits(amounts[1], 6));
-        if (rate > 0) setExchangeRate(rate);
+        if (rate > 0) {
+            setExchangeRate(rate);
+            // Sync currentRate if they are supposed to be the same
+            setCurrentRate(rate);
+        }
       } catch (e) {
         console.error("Failed to fetch on-chain rate:", e);
       }
     };
 
     fetchRate();
-    const interval = setInterval(fetchRate, 30000); // Update every 30s
+    const interval = setInterval(fetchRate, 15000); // Update every 15s to match RealTime
     return () => clearInterval(interval);
   }, []);
 
   const handlePriceUpdate = (price: number) => {
-    // Only update if the price is significantly different to avoid flickering
-    // and ensure it's a valid positive number
-    if (price > 0 && Math.abs(price - exchangeRate) > 0.000001) {
-      setExchangeRate(price);
+    // Sync both rates to ensure UI and internal logic match on-chain data
+    if (price > 0 && Math.abs(price - currentRate) > 0.000001) {
+      const normalizedPrice = fromToken.symbol === "USDC" ? price : 1 / price;
+      setExchangeRate(normalizedPrice);
+      setCurrentRate(price);
     }
   };
 

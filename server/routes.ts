@@ -105,53 +105,61 @@ export async function registerRoutes(
       Always return JSON with action and response. For PROPOSE_SWAP, include fromToken, toToken, and amount.
       Valid actions: CHAT, PROPOSE_SWAP, EXECUTE_SWAP, CANCEL_SWAP.`;
 
-      // Select provider (defaults to groq, fallbacks to gemini if groq fails or is not available)
+      // Select provider - each provider works independently without fallback
       const provider = req.body.provider || "groq";
       let aiResponse: any = null;
 
-      if (provider === "groq" && groq) {
-        try {
-          const messages = [
-            { role: "system" as const, content: systemPrompt },
-            ...(history && history.length > 0 ? history : []).slice(-5).map((h: any) => ({ role: h.role as "user" | "assistant", content: h.content })),
-            { role: "user" as const, content: message }
-          ];
+      if (provider === "groq") {
+        if (groq) {
+          try {
+            const messages = [
+              { role: "system" as const, content: systemPrompt },
+              ...(history && history.length > 0 ? history : []).slice(-5).map((h: any) => ({ role: h.role as "user" | "assistant", content: h.content })),
+              { role: "user" as const, content: message }
+            ];
 
-          const completion = await groq.chat.completions.create({
-            messages,
-            model: "llama-3.3-70b-versatile",
-            response_format: { type: "json_object" },
-          });
+            const completion = await groq.chat.completions.create({
+              messages,
+              model: "llama-3.3-70b-versatile",
+              response_format: { type: "json_object" },
+            });
 
-          aiResponse = JSON.parse(completion.choices[0].message.content || "{}");
-          console.log("AI Response from Groq");
-        } catch (groqError) {
-          console.error("Groq error, trying Gemini fallback:", groqError);
+            aiResponse = JSON.parse(completion.choices[0].message.content || "{}");
+            console.log("AI Response from Groq");
+          } catch (groqError) {
+            console.error("Groq error:", groqError);
+          }
+        } else {
+          console.log("Groq API key not configured");
         }
       }
 
-      // Use Gemini if provider is gemini OR if groq failed/unavailable
-      if (!aiResponse && gemini) {
-        try {
-          const model = gemini.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
-            generationConfig: {
-              responseMimeType: "application/json",
-            }
-          });
+      // Use Gemini ONLY when provider is explicitly "gemini"
+      if (provider === "gemini") {
+        if (gemini) {
+          try {
+            const model = gemini.getGenerativeModel({ 
+              model: "gemini-1.5-flash",
+              generationConfig: {
+                responseMimeType: "application/json",
+              }
+            });
 
-          const historyForGemini = (history && history.length > 0 ? history : []).slice(-5).map((h: any) => 
-            `${h.role === "user" ? "User" : "Assistant"}: ${h.content}`
-          ).join("\n");
+            const historyForGemini = (history && history.length > 0 ? history : []).slice(-5).map((h: any) => 
+              `${h.role === "user" ? "User" : "Assistant"}: ${h.content}`
+            ).join("\n");
 
-          const prompt = `${systemPrompt}\n\nConversation history:\n${historyForGemini}\n\nUser: ${message}\n\nRespond with valid JSON only.`;
+            const prompt = `${systemPrompt}\n\nConversation history:\n${historyForGemini}\n\nUser: ${message}\n\nRespond with valid JSON only.`;
 
-          const result = await model.generateContent(prompt);
-          const responseText = result.response.text();
-          aiResponse = JSON.parse(responseText);
-          console.log("AI Response from Gemini");
-        } catch (geminiError) {
-          console.error("Gemini error:", geminiError);
+            const result = await model.generateContent(prompt);
+            const responseText = result.response.text();
+            aiResponse = JSON.parse(responseText);
+            console.log("AI Response from Gemini");
+          } catch (geminiError) {
+            console.error("Gemini error:", geminiError);
+          }
+        } else {
+          console.log("Gemini API key not configured");
         }
       }
 

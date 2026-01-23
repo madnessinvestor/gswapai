@@ -146,8 +146,8 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
       width: chartContainerRef.current.clientWidth,
       height: 400,
       localization: {
-          // Enforce 3 decimal places for price (0.000 style)
-          priceFormatter: (price: number) => price.toFixed(3),
+          // Increase precision for smaller values (EURC/USDC)
+          priceFormatter: (price: number) => price < 1 ? price.toFixed(6) : price.toFixed(3),
       },
       timeScale: {
         timeVisible: true,
@@ -162,7 +162,12 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
         },
       },
       rightPriceScale: {
+        visible: true,
         borderColor: '#3b1f69',
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
       },
     });
 

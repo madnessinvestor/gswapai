@@ -713,7 +713,8 @@ export default function SwapInterface() {
   // onPriceUpdate(price) -> sends this inverted price
   // So exchangeRate IS the correct rate for From -> To
   
-  const currentRate = exchangeRate;
+  // Rate is already handled by state [currentRate, setCurrentRate]
+
 
   // Dynamic Chart Data based on pair
   const chartData = generateChartData(currentRate, currentRate * 0.02, chartTimeframe);

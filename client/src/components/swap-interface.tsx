@@ -1249,20 +1249,28 @@ export default function SwapInterface() {
                 return updated;
               });
 
-              toast({ 
-                title: "Swap Successful", 
-                description: (
-                  <div className="flex flex-col gap-1">
-                    <p>Balances updated.</p>
-                    <div className="text-xs font-mono mt-1 bg-green-500/10 p-2 rounded border border-green-500/20">
-                      <p>You sold <span className="font-bold">{inputAmount} {fromToken.symbol}</span></p>
-                      <p>Received <span className="font-bold">{parseFloat(outputAmount).toFixed(6)} {toToken.symbol}</span></p>
-                    </div>
-                  </div>
-                ),
-                className: "bg-green-500/15 border-green-500/30 text-green-500",
-                duration: 4000
-              });
+          const isBuy = fromToken.symbol === 'USDC';
+          const inputAmtValue = parseFloat(inputAmount);
+          const outputAmtValue = parseFloat(outputAmount);
+
+          // Confirmation logic fix
+          const soldAmount = inputAmtValue.toFixed(4);
+          const receivedAmount = outputAmtValue.toFixed(6);
+
+          toast({ 
+            title: "Swap Successful", 
+            description: (
+              <div className="flex flex-col gap-1">
+                <p>Balances updated.</p>
+                <div className="text-xs font-mono mt-1 bg-green-500/10 p-2 rounded border border-green-500/20">
+                  <p>You sold <span className="font-bold">{soldAmount} {fromToken.symbol}</span></p>
+                  <p>Received <span className="font-bold">{receivedAmount} {toToken.symbol}</span></p>
+                </div>
+              </div>
+            ),
+            className: "bg-green-500/15 border-green-500/30 text-green-500",
+            duration: 4000
+          });
               
               // Play success sound
               try {
@@ -1483,14 +1491,22 @@ export default function SwapInterface() {
             return updated;
           });
 
+          const isBuy = fromTokenObj.symbol === 'USDC';
+          const inputAmtValue = parseFloat(amount);
+          const outputAmtValue = inputAmtValue * currentRate;
+
+          // Confirmation logic fix for AI
+          const soldAmount = inputAmtValue.toFixed(4);
+          const receivedAmount = outputAmtValue.toFixed(6);
+
           toast({ 
             title: "Swap Successful", 
             description: (
               <div className="flex flex-col gap-1">
                 <p>Balances updated.</p>
                 <div className="text-xs font-mono mt-1 bg-green-500/10 p-2 rounded border border-green-500/20">
-                  <p>You sold <span className="font-bold">{amount} {fromTokenObj.symbol}</span></p>
-                  <p>Received <span className="font-bold">{(parseFloat(amount) * currentRate).toFixed(6)} {toTokenObj.symbol}</span></p>
+                  <p>You sold <span className="font-bold">{soldAmount} {fromTokenObj.symbol}</span></p>
+                  <p>Received <span className="font-bold">{receivedAmount} {toTokenObj.symbol}</span></p>
                 </div>
               </div>
             ),

@@ -1816,7 +1816,12 @@ export default function SwapInterface() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -10 }}
                         >
-                          <AISwapAssistant onSwapAction={handleAIAction} tokens={ARC_TOKENS} />
+                          <AISwapAssistant 
+                            onSwapAction={handleAIAction} 
+                            tokens={ARC_TOKENS} 
+                            balances={balances}
+                            walletConnected={walletConnected}
+                          />
                         </motion.div>
                       )}
                     </AnimatePresence>

@@ -203,25 +203,21 @@ export default function PriceChart({ timeframe, fromSymbol, toSymbol, currentRat
         const usdcAddr = "0x3600000000000000000000000000000000000000";
         const amountIn = ethers.parseUnits("1", 6);
         
-        // Fetch USDC -> EURC rate
-        const amounts = await pool.getAmountsOut(amountIn, [usdcAddr, eurcAddr]);
-        const usdcToEurcPrice = Number(amounts[1]) / 1e6;
-        
-        // The base rate for global UI is EURC/USDC (1 / usdcToEurc)
-        const eurcToUsdcPrice = 1 / usdcToEurcPrice;
+        // Fetch EURC -> USDC rate directly from pool
+        const amounts = await pool.getAmountsOut(amountIn, [eurcAddr, usdcAddr]);
+        const eurcToUsdcPrice = Number(amounts[1]) / 1e6;
         
         // Notify parent of the base rate (EURC/USDC)
         if (onPriceUpdate && eurcToUsdcPrice > 0) {
             onPriceUpdate(eurcToUsdcPrice);
         }
 
-        // If we are looking at USDC/EURC, return usdcToEurcPrice
+        // Return the correct rate based on the visual pair selected in chart
         if (fromSymbol === "USDC") {
-            return usdcToEurcPrice;
+            return 1 / eurcToUsdcPrice;
         }
 
         return eurcToUsdcPrice;
-
       } catch (e) {
         console.warn("Error reading price:", e);
         const fallbackUsdcToEurc = 0.083173; 

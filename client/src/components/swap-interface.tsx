@@ -518,19 +518,18 @@ export default function SwapInterface() {
           address: "0x284C5Afc100ad14a458255075324fA0A9dfd66b1" as `0x${string}`,
           abi: ROUTER_ABI,
           functionName: 'getAmountsOut',
-          args: [amountIn, [USDC_ADDRESS as `0x${string}`, "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as `0x${string}`]]
+          args: [amountIn, [eurcAddress, usdcAddress]]
         }) as bigint[];
         
-        // 1 USDC -> X EURC
-        const usdcToEurcRate = parseFloat(formatUnits(amounts[1], 6));
+        // 1 EURC -> X USDC (Standard rate returned by pool for 1 EURC)
+        const eurcToUsdcPrice = parseFloat(formatUnits(amounts[1], 6));
         
-        if (usdcToEurcRate > 0) {
-            // currentRate should be EURC/USDC (How many USDC for 1 EURC)
-            const eurcToUsdcPrice = 1 / usdcToEurcRate;
+        if (eurcToUsdcPrice > 0) {
+            // Sync all rates to match EXACTLY what AIAssist uses
             setCurrentRate(eurcToUsdcPrice);
             
             // exchangeRate is From -> To for the swap logic
-            const normalizedRate = fromToken.symbol === "USDC" ? usdcToEurcRate : eurcToUsdcPrice;
+            const normalizedRate = fromToken.symbol === "USDC" ? 1 / eurcToUsdcPrice : eurcToUsdcPrice;
             setExchangeRate(normalizedRate);
         }
       } catch (e) {
@@ -1009,15 +1008,17 @@ export default function SwapInterface() {
 
   // Exchange Rate Logic
   useEffect(() => {
-    if (!inputAmount) {
+    if (!inputAmount || !currentRate) {
       setOutputAmount("");
       return;
     }
     const num = parseFloat(inputAmount);
     if (isNaN(num)) return;
     
-    // Use 6 decimals for internal calculation to match AI Assist and Pool exactly
-    setOutputAmount((num * currentRate).toFixed(6));
+    // Ensure the output amount calculation uses the EXACT same rate from the pool
+    // currentRate is always EURC/USDC
+    const rate = fromToken.symbol === "USDC" ? 1 / currentRate : currentRate;
+    setOutputAmount((num * rate).toFixed(6));
   }, [inputAmount, fromToken, toToken, currentRate]);
 
   useEffect(() => {
@@ -1763,6 +1764,16 @@ export default function SwapInterface() {
                     {/* Detailed Info Section */}
                     {inputAmount && (
                       <div className="bg-background/40 rounded-xl p-3 space-y-2 mt-2 border border-border/40">
+                        <div className="flex flex-col gap-1 text-[11px] text-muted-foreground mb-1">
+                          <div className="flex items-center gap-1">
+                            <Info className="w-3 h-3" />
+                            <span>1 EURC ≈ {currentRate.toFixed(6)} USDC</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Info className="w-3 h-3" />
+                            <span>1 USDC ≈ {(1/currentRate).toFixed(6)} EURC</span>
+                          </div>
+                        </div>
                         <div className="flex justify-between text-xs">
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <Info className="w-3 h-3" /> Rate
@@ -1869,9 +1880,15 @@ export default function SwapInterface() {
                              <h2 className="text-xl font-bold text-foreground">{fromToken.symbol} / {toToken.symbol}</h2>
                              <span className="px-2 py-0.5 rounded-md bg-secondary/50 text-xs font-medium text-muted-foreground border border-border/20">Spot</span>
                          </div>
-                         <div className="text-sm font-medium text-muted-foreground mt-1 flex items-center gap-2">
-                            <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold tracking-wider">RATE</span>
-                            1 {fromToken.symbol} ≈ {currentRate.toFixed(6)} {toToken.symbol}
+                         <div className="text-sm font-medium text-muted-foreground mt-1 flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold tracking-wider">RATE</span>
+                              1 EURC ≈ {currentRate.toFixed(6)} USDC
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold tracking-wider">RATE</span>
+                              1 USDC ≈ {(1/currentRate).toFixed(6)} EURC
+                            </div>
                          </div>
                          <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
                             <span className="font-medium text-muted-foreground">24h Vol: <span className="text-foreground font-semibold tracking-tight">${(globalVolume/1000).toFixed(2)}K</span></span>
